@@ -6,6 +6,7 @@
 // though by convention you keep the name matching (import Header
 // from "./components/Header").
 
+
 import { useState } from "react";
 
 export default function Header({ storeName }) {
