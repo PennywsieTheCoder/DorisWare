@@ -13,7 +13,7 @@
 // next to this file, for a file named Header (.jsx is assumed).
 
 import Header from "./components/Header";
-import ProductCard from "./components/ProductCard";
+import ProductCard from "./components/Productcard";
 import { PRODUCTS } from "./data/products";
 
 export default function App() {
