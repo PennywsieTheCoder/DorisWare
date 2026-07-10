@@ -1,0 +1,65 @@
+# .github/workflows/deploy.yml
+#
+# ============================================================
+# What this file does, line by line in plain terms:
+#
+# `on: push: branches: [main]` — run this workflow every time
+# someone pushes to the main branch. This is the trigger.
+#
+# `jobs:` — one or more sequences of steps that run on a fresh
+# virtual machine GitHub spins up for you (you never see or manage
+# this machine directly).
+#
+# The `build` job: checks out your code, installs Node, runs
+# `npm install` and `npm run build` (same commands you'd run by
+# hand), then uploads the resulting `dist` folder as an artifact.
+#
+# The `deploy` job: takes that artifact and publishes it to GitHub
+# Pages. It only runs after `build` finishes successfully — that's
+# what `needs: build` means.
+# ============================================================
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Upload build output
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
