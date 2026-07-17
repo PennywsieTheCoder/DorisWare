@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import {ShoppingCart,CircleX,Trash2 } from "lucide-react";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../context/Cartcontext";
 
 export default function Header({ storeName }) {
   const [isOpen, setIsOpen] = useState(false);

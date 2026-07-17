@@ -1,8 +1,8 @@
 import { Routes, Route } from "react-router-dom";
  import Header from "./components/Header";
  import Footer from "./components/Footer";
- import HomePage from "./pages/HomePage";
- import ProductPage from "./pages/ProductPage";
+ import HomePage from "./pages/Homepage";
+ import ProductPage from "./pages/Productpage";
 
  export default function App() {
    return (

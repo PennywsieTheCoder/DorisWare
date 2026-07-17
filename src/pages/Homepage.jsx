@@ -1,7 +1,7 @@
 // src/pages/HomePage.jsx
 
 import { useState, useEffect } from "react";
-import ProductCard from "../components/ProductCard";
+import ProductCard from "../components/Productcard";
 import Filters from "../components/Filters";
 import About from "../components/About";
 import NewsletterSignup from "../components/Signup";

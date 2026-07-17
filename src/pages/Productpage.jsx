@@ -29,8 +29,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ShoppingCart, Heart, AlertCircle, Star } from "lucide-react";
 import { PRODUCTS } from "../data/products";
-import ProductImageCarousel from "../components/ProductImageCarousel";
-import { useCart } from "../context/CartContext";
+import ProductImageCarousel from "../components/Productimagecarousel";
+import { useCart } from "../context/Cartcontext";
 
 export default function ProductPage() {
   const { id } = useParams();

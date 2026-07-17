@@ -2,8 +2,8 @@
 
 import { ArrowUpRight, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
-import ProductImageCarousel from "./ProductImageCarousel";
-import { useCart } from "../context/CartContext";
+import ProductImageCarousel from "./Productimagecarousel";
+import { useCart } from "../context/Cartcontext";
 
 export default function ProductCard({
   id,
