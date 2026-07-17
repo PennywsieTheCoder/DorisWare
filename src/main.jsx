@@ -7,10 +7,10 @@ import './index.css'
 
  ReactDOM.createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter basename="/DorisWare/">
     <CartProvider>
+    <BrowserRouter basename="/DorisWare/">
       <App />
-    </CartProvider>
     </BrowserRouter>
+    </CartProvider>
   </StrictMode>,
 );
