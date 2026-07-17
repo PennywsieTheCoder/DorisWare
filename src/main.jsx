@@ -2,15 +2,15 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
-import { CartProvider } from './context/CartContext'
+import { CartProvider } from './context/Cartcontext'
 import './index.css'
 
  ReactDOM.createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <CartProvider>
     <BrowserRouter basename="/DorisWare/">
+    <CartProvider>
       <App />
-    </BrowserRouter>
     </CartProvider>
+    </BrowserRouter>
   </StrictMode>,
 );
