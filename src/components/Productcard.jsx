@@ -1,24 +1,79 @@
 // src/components/ProductCard.jsx
 
-export default function ProductCard({ name, price, description, stripeLink }) {
+import { ArrowUpRight, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
+import ProductImageCarousel from "./ProductImageCarousel";
+import { useCart } from "../context/CartContext";
+
+export default function ProductCard({
+  id,
+  name,
+  price,
+  description,
+  stripeLink,
+  quantity,
+  images,       // now an ARRAY, not a single string
+  tagline = null,
+})
+
+{
+
+  const { addToCart } = useCart();
+
+  const productItem = {
+    id,
+    name,
+    price,
+    description,
+    stripeLink,
+    quantity,
+    image: images?.[0] || "",
+  };
+
+  const isOutOfStock = Number(quantity ?? 0) <= 0;
+  const isLowStock = !isOutOfStock && Number(quantity ?? 0) < 5;
+
   return (
-    <div className="border border-stone-300 rounded-md p-5 bg-white shadow-sm">
-      <h3 className="font-serif text-lg font-semibold text-stone-800">
-        {name}
-      </h3>
-      <p className="text-sm text-stone-500 my-2">{description}</p>
-      <div className="flex items-center justify-between mt-3">
-        <span className="font-mono text-sm text-amber-800 border border-dashed border-amber-700 px-2 py-1 rounded">
-          {price}
-        </span>
-        <a
-          href={stripeLink}
-          target="_blank"
-          rel="noopener"
-          className="text-sm font-semibold px-3 py-2 rounded bg-stone-800 text-white hover:bg-amber-800 transition-colors"
-        >
-          Buy now
-        </a>
+    <div className="bg-white rounded-3xl shadow-md overflow-hidden max-w-xs">
+      <div className="relative">
+        <ProductImageCarousel images={images} name={name} />
+      </div>
+
+      <div className="p-4">
+        <Link to={`/product/${id}`}>
+          <h3 className="font-bold text-lg text-stone-900 leading-tight hover:underline">
+            {name}
+          </h3>
+        </Link>
+
+        {tagline && (
+          <p className="text-stone-400 text-sm mt-0.5">{tagline}</p>
+        )}
+
+        <p className="text-stone-500 text-sm mt-2">{description}</p>
+
+        <div className="mt-3">
+          {isOutOfStock ? (
+            <p className="text-sm font-medium text-red-600">Out of stock</p>
+          ) : isLowStock ? (
+            <p className="text-sm font-medium text-amber-600">Only {quantity} left</p>
+          ) : (
+            <p className="text-sm font-medium text-emerald-600">In stock</p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between mt-4">
+          <span className="font-bold text-lg text-stone-900">{price}</span>
+          <button
+            type="button"
+            onClick={() => addToCart(productItem)}
+            disabled={isOutOfStock}
+            className="bg-white text-black rounded-full px-3 py-2 flex items-center gap-2 text-sm font-semibold hover:bg-stone-100 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <ShoppingCart size={20} />
+            {isOutOfStock ? "Sold out" : "Add to cart"}
+          </button>
+        </div>
       </div>
     </div>
   );
