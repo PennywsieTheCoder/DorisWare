@@ -188,16 +188,12 @@ export default function ProductPage() {
               )}
             </p>
           </div>
-        </div>
-      </div>
 
-      {/* Add to Cart Button - Sticky Bottom */}
-      <div className="bg-white border-t border-stone-200 px-4 py-3">
-        <div className="max-w-md mx-auto">
+          {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
-            className="w-full bg-black text-white rounded-full py-3 font-semibold flex items-center justify-center gap-2 text-sm hover:bg-stone-800 transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full bg-black text-white rounded-full py-3 font-semibold flex items-center justify-center gap-2 text-sm hover:bg-stone-800 transition disabled:cursor-not-allowed disabled:opacity-60 mt-4"
           >
             <ShoppingCart size={18} />
             {isOutOfStock ? "Sold out" : "Add to Cart"}
