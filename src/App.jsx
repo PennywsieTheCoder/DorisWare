@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/Scrolltotop";
  import Header from "./components/Header";
  import Footer from "./components/Footer";
  import HomePage from "./pages/Homepage";
@@ -9,6 +10,7 @@ import { Routes, Route } from "react-router-dom";
      <div className="min-h-screen flex flex-col bg-white">
        <Header storeName="DorisWare" />
 
+       <ScrollToTop />
        <main className="flex-1">
          <Routes>
            <Route path="/" element={<HomePage />} />

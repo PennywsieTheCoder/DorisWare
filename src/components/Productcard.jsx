@@ -27,14 +27,14 @@ export default function ProductCard({
     description,
     stripeLink,
     quantity,
-    image: images?.[0] || "",
+    images,
   };
 
   const isOutOfStock = Number(quantity ?? 0) <= 0;
   const isLowStock = !isOutOfStock && Number(quantity ?? 0) < 5;
 
   return (
-    <div className="bg-white rounded-3xl shadow-md overflow-hidden max-w-xs">
+    <div className="bg-white rounded-3xl shadow-md overflow-hidden">
       <div className="relative">
         <ProductImageCarousel images={images} name={name} />
       </div>
