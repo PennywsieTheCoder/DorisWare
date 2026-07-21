@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Hero from "../components/Hero";
 import Categories from "../components/Categories";
-import FeaturedProducts from "../components/FeaturedProducts";
+import FeaturedProducts from "../components/Featuredproducts";
 import ProductCard from "../components/Productcard";
 import Filters from "../components/Filters";
-import PromoBanner from "../components/PromoBanner";
+import PromoBanner from "../components/Promobanner";
 import About from "../components/About";
 import NewsletterSignup from "../components/Signup";
 import { PRODUCTS } from "../data/products";
