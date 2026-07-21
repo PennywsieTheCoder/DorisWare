@@ -5,7 +5,7 @@
 // component isn't locked to one hardcoded name.
 
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {ShoppingCart,CircleX,Trash2 } from "lucide-react";
 import { useCart } from "../context/Cartcontext";
 
@@ -18,11 +18,70 @@ export default function Header({ storeName }) {
   return (
     <header className="bg-stone-100 border-b border-stone-300 px-6 py-4 sticky top-0 z-10">
       <div className="mx-auto flex items-center justify-between">
-        <span className="font-serif text-xl font-semibold text-stone-800">
+        <Link
+  to="/"
+  className="font-serif text-xl font-semibold text-stone-800"
+>
+  {storeName}
+</Link>
+        {/* <span className="font-serif text-xl font-semibold text-stone-800">
           {storeName}
-        </span>
+        </span> */}
 
         <nav className="hidden sm:flex gap-6 text-sm font-medium text-stone-600 items-center">
+
+  <Link
+    to="/"
+    className="hover:text-stone-900"
+  >
+    Home
+  </Link>
+
+
+  <Link
+    to="/shop"
+    className="hover:text-stone-900"
+  >
+    Shop
+  </Link>
+
+
+  <a
+    href="#about"
+    className="hover:text-stone-900"
+  >
+    About
+  </a>
+
+
+  <a
+    href="#contact"
+    className="hover:text-stone-900"
+  >
+    Contact
+  </a>
+
+
+  {!isProductPage && (
+    <button
+      type="button"
+      onClick={openCart}
+      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-stone-800 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100"
+      aria-label="View cart"
+    >
+      <ShoppingCart size={20} />
+
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-stone-900 px-1.5 text-[0.65rem] font-semibold text-white">
+          {count}
+        </span>
+      )}
+    </button>
+  )}
+
+</nav>
+
+        {/* <nav className="hidden sm:flex gap-6 text-sm font-medium text-stone-600 items-center">
           <a href="#shop" className="hover:text-stone-900">Shop</a>
           <a href="#about" className="hover:text-stone-900">About</a>
           <a href="#contact" className="hover:text-stone-900">Contact</a>
@@ -41,7 +100,7 @@ export default function Header({ storeName }) {
               )}
             </button>
           )}
-        </nav>
+        </nav> */}
 
         <button
           className="sm:hidden text-stone-700 font-medium"
@@ -54,28 +113,89 @@ export default function Header({ storeName }) {
 
       {isOpen && (
         <nav className="sm:hidden flex flex-col mt-4 gap-3 text-sm font-medium text-stone-600">
-          <a href="#shop" onClick={() => setIsOpen(false)}>Shop</a>
-          <a href="#about" onClick={() => setIsOpen(false)}>About</a>
-          <a href="#contact" onClick={() => setIsOpen(false)}>Contact</a>
-          {!isProductPage && (
-            <button
-              type="button"
-              onClick={() => {
-                openCart();
-                setIsOpen(false);
-              }}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-800 text-white shadow-sm transition hover:bg-stone-700"
-              aria-label="View cart"
-            >
-              <ShoppingCart size={20} />
-              {count > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white text-[0.65rem] font-semibold text-stone-900">
-                  {count}
-                </span>
-              )}
-            </button>
-          )}
-        </nav>
+
+  <Link
+    to="/"
+    onClick={() => setIsOpen(false)}
+    className="hover:text-stone-900"
+  >
+    Home
+  </Link>
+
+
+  <Link
+    to="/shop"
+    onClick={() => setIsOpen(false)}
+    className="hover:text-stone-900"
+  >
+    Shop
+  </Link>
+
+
+  <a
+    href="#about"
+    onClick={() => setIsOpen(false)}
+    className="hover:text-stone-900"
+  >
+    About
+  </a>
+
+
+  <a
+    href="#contact"
+    onClick={() => setIsOpen(false)}
+    className="hover:text-stone-900"
+  >
+    Contact
+  </a>
+
+
+  {!isProductPage && (
+    <button
+      type="button"
+      onClick={() => {
+        openCart();
+        setIsOpen(false);
+      }}
+      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-800 text-white shadow-sm transition hover:bg-stone-700"
+      aria-label="View cart"
+    >
+      <ShoppingCart size={20} />
+
+      {count > 0 && (
+        <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white text-[0.65rem] font-semibold text-stone-900">
+          {count}
+        </span>
+      )}
+    </button>
+  )}
+
+</nav>
+
+
+        // <nav className="sm:hidden flex flex-col mt-4 gap-3 text-sm font-medium text-stone-600">
+        //   <a href="#shop" onClick={() => setIsOpen(false)}>Shop</a>
+        //   <a href="#about" onClick={() => setIsOpen(false)}>About</a>
+        //   <a href="#contact" onClick={() => setIsOpen(false)}>Contact</a>
+        //   {!isProductPage && (
+        //     <button
+        //       type="button"
+        //       onClick={() => {
+        //         openCart();
+        //         setIsOpen(false);
+        //       }}
+        //       className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-800 text-white shadow-sm transition hover:bg-stone-700"
+        //       aria-label="View cart"
+        //     >
+        //       <ShoppingCart size={20} />
+        //       {count > 0 && (
+        //         <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white text-[0.65rem] font-semibold text-stone-900">
+        //           {count}
+        //         </span>
+        //       )}
+        //     </button>
+        //   )}
+        // </nav>
       )}
 
       {isCartOpen && (

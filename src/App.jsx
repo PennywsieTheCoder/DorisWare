@@ -4,6 +4,7 @@ import ScrollToTop from "./components/Scrolltotop";
  import Footer from "./components/Footer";
  import HomePage from "./pages/Homepage";
  import ProductPage from "./pages/Productpage";
+ import ShopPage from "./pages/Shoppage";
 
  export default function App() {
    return (
@@ -14,6 +15,7 @@ import ScrollToTop from "./components/Scrolltotop";
        <main className="flex-1">
          <Routes>
            <Route path="/" element={<HomePage />} />
+           <Route path="/shop" element={<ShopPage />} />
            <Route path="/product/:id" element={<ProductPage />} />
          </Routes>
        </main>

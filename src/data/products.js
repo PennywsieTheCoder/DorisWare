@@ -25,6 +25,7 @@ export const PRODUCTS = [
     quantity: 12,
     images: [withBase("/images/castironskillet.jpg"), withBase("/images/test.webp")],
     stripeLink: "https://buy.stripe.com/REPLACE_ME_1",
+    featured: true,
   },
   {
     id: "spoons",
@@ -35,6 +36,7 @@ export const PRODUCTS = [
     quantity: 4,
     images: [withBase("/images/castironskillet.jpg"), withBase("/images/test.webp")],
     stripeLink: "https://buy.stripe.com/REPLACE_ME_2",
+    featured: false,
   },
   {
     id: "bowl",
@@ -45,6 +47,7 @@ export const PRODUCTS = [
     quantity: 2,
     images: [withBase("/images/castironskillet.jpg"), withBase("/images/test.webp")],
     stripeLink: "https://buy.stripe.com/REPLACE_ME_3",
+    featured: true,
   },
   {
     id: "knife",
@@ -55,6 +58,7 @@ export const PRODUCTS = [
     quantity: 6,
     images: [withBase("/images/castironskillet.jpg"), withBase("/images/test.webp")],
     stripeLink: "https://buy.stripe.com/REPLACE_ME_4",
+    featured: true,
   },
   {
     id: "Cooker",
@@ -65,5 +69,6 @@ export const PRODUCTS = [
     quantity: 0,
     images: [withBase("/images/castironskillet.jpg"), withBase("/images/test.webp")],
     stripeLink: "https://buy.stripe.com/REPLACE_ME_4",
+    featured: true,
   },
 ];
