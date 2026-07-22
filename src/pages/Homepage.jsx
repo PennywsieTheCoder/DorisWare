@@ -10,6 +10,9 @@ import PromoBanner from "../components/Promobanner";
 import About from "../components/About";
 import NewsletterSignup from "../components/Signup";
 import { PRODUCTS } from "../data/products";
+import WhyChooseUs from "../components/Whychooseus";
+import Testimonials from "../components/Testimonials";
+
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
@@ -100,6 +103,8 @@ export default function HomePage() {
 
       {/* Promo / Sale Banner */}
       <PromoBanner />
+      <WhyChooseUs />
+      <Testimonials />
 
       {/* About Section */}
       <section id="about">
@@ -109,7 +114,8 @@ export default function HomePage() {
       </section>
 
       {/* Newsletter */}
-      <section className="border-t border-stone-200">
+      <NewsletterSignup />
+      {/* <section className="border-t border-stone-200">
         <div className="mx-auto max-w-5xl px-6 py-16">
           <h2 className="mb-3 font-serif text-2xl font-semibold text-stone-800">
             Stay in the Loop
@@ -122,7 +128,7 @@ export default function HomePage() {
 
           <NewsletterSignup />
         </div>
-      </section>
+      </section> */}
     </>
   );
 }
