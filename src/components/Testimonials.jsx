@@ -22,7 +22,7 @@ export default function Testimonials() {
   ];
 
   return (
-    <section className="bg-white py-20">
+    <section className="bg-white py-20 dark:bg-stone-950">
       <div className="mx-auto max-w-6xl px-6">
         {/* Heading */}
         <div className="mb-12 text-center">
@@ -30,7 +30,7 @@ export default function Testimonials() {
             Customer Reviews
           </p>
 
-          <h2 className="mt-2 font-serif text-3xl font-semibold text-stone-800 md:text-4xl">
+          <h2 className="mt-2 font-serif text-3xl font-semibold text-stone-800 dark:text-stone-100 md:text-4xl">
             What Our Customers Are Saying
           </h2>
         </div>
@@ -40,7 +40,7 @@ export default function Testimonials() {
           {testimonials.map((testimonial) => (
             <div
               key={testimonial.name}
-              className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-lg"
+              className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-lg dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/20"
             >
               <div className="mb-4 flex gap-1 text-amber-500">
                 <Star size={18} fill="currentColor" />
@@ -50,12 +50,12 @@ export default function Testimonials() {
                 <Star size={18} fill="currentColor" />
               </div>
 
-              <p className="text-sm leading-relaxed text-stone-600">
+              <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-300">
                 "{testimonial.review}"
               </p>
 
-              <div className="mt-5 border-t border-stone-200 pt-4">
-                <p className="font-semibold text-stone-900">
+              <div className="mt-5 border-t border-stone-200 pt-4 dark:border-stone-700">
+                <p className="font-semibold text-stone-900 dark:text-stone-100">
                   {testimonial.name}
                 </p>
               </div>

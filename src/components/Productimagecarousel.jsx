@@ -25,7 +25,7 @@ export default function ProductImageCarousel({ images, name }) {
   }
 
   return (
-    <div className="relative w-full aspect-square rounded-t-3xl overflow-hidden bg-stone-50">
+    <div className="relative w-full aspect-square rounded-t-3xl overflow-hidden bg-stone-50 dark:bg-stone-800">
       <img
         src={images[index]}
         alt={`${name}, photo ${index + 1} of ${images.length}`}
@@ -34,7 +34,7 @@ export default function ProductImageCarousel({ images, name }) {
       />
       <div
         style={{ display: "none" }}
-        className="absolute inset-0 items-center justify-center bg-stone-100 text-xs text-stone-400 font-mono"
+        className="absolute inset-0 items-center justify-center bg-stone-100 text-xs text-stone-400 font-mono dark:bg-stone-800 dark:text-stone-400"
       >
         image unavailable
       </div>
@@ -44,10 +44,13 @@ export default function ProductImageCarousel({ images, name }) {
           {images.map((_, i) => (
             <button
               key={i}
-              onClick={() => setIndex(i)}
+              onClick={(event) => {
+                event.stopPropagation();
+                setIndex(i);
+              }}
               aria-label={`Show photo ${i + 1}`}
               className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                i === index ? "bg-stone-800" : "bg-stone-400/50 hover:bg-stone-500"
+                i === index ? "bg-stone-800 dark:bg-stone-100" : "bg-stone-400/50 hover:bg-stone-500 dark:bg-stone-500/60 dark:hover:bg-stone-300"
               }`}
             />
           ))}

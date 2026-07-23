@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import ScrollToTop from "./components/Scrolltotop";
  import Header from "./components/Header";
  import Footer from "./components/Footer";
@@ -8,7 +8,7 @@ import ScrollToTop from "./components/Scrolltotop";
 
  export default function App() {
    return (
-     <div className="min-h-screen flex flex-col bg-white">
+     <div className="min-h-screen flex flex-col bg-white text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100">
        <Header storeName="DorisWare" />
 
        <ScrollToTop />
@@ -17,6 +17,7 @@ import ScrollToTop from "./components/Scrolltotop";
            <Route path="/" element={<HomePage />} />
            <Route path="/shop" element={<ShopPage />} />
            <Route path="/product/:id" element={<ProductPage />} />
+           <Route path="*" element={<Navigate to="/" replace />} />
          </Routes>
        </main>
 

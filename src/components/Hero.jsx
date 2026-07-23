@@ -19,7 +19,7 @@ export default function Hero() {
 
 
       {/* Content */}
-      <div className="relative z-10 mx-auto flex h-full max-w-6xl items-center px-6">
+      <div className="relative z-1 mx-auto flex h-full max-w-6xl items-center px-6">
         <div className="max-w-2xl text-white">
 
           <span className="text-sm font-medium uppercase tracking-[4px] text-amber-300">
@@ -52,37 +52,34 @@ export default function Hero() {
 
 
             {/* About Section Button */}
-            <a
-              href="#about"
+            <Link
+              to="/#about"
               className="flex items-center gap-2 rounded-lg border border-white px-6 py-3 font-semibold text-white transition-colors hover:bg-white hover:text-stone-900"
             >
               Our Story
               <ChevronRight size={18} />
-            </a>
+            </Link>
 
           </div>
 
         </div>
       </div>
 
-
-      {/* Curved Divider */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
-
-        <svg
-          viewBox="0 0 1440 120"
-          className="block h-auto w-full"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-
-          <path
-            fill="#ffffff"
-            d="M0,64L80,69.3C160,75,320,85,480,85.3C640,85,800,75,960,69.3C1120,64,1280,64,1360,64L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z"
-          />
-
-        </svg>
-
-      </div>
+{/* Curved Divider */}
+<div className="absolute -bottom-1 left-0 w-full overflow-hidden leading-none">
+  <svg
+    viewBox="0 0 1440 120"
+    preserveAspectRatio="none"
+    className="block h-auto w-full"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      className="fill-white dark:fill-stone-950 transition-colors duration-200"
+      d="M0,64L80,69.3C160,75,320,85,480,85.3C640,85,800,75,960,69.3C1120,64,1280,64,1360,64L1440,64L1440,130L1360,130C1280,130,1120,130,960,130C800,130,640,130,480,130C320,130,160,130,80,130L0,130Z"
+    />
+  </svg>
+</div>
+      
 
     </section>
   );

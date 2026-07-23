@@ -19,7 +19,7 @@ import {
 
 function PaymentBadge({ children }) {
   return (
-    <div className="w-11 h-8 bg-white rounded flex items-center justify-center px-1.5">
+    <div className="w-11 h-8 bg-white rounded flex items-center justify-center px-1.5 dark:bg-stone-100">
       {children}
     </div>
   );
@@ -77,7 +77,7 @@ export default function Footer({ storeName, contactEmail }) {
           </p>
           <div className="flex items-center gap-2 sm:justify-end mb-3">
             <PaymentBadge>
-              <SiVisa size={22} className="text-stone-900" />
+              <SiVisa size={22} className="text-blue-500" />
             </PaymentBadge>
             <PaymentBadge>
               <SiMastercard size={22} className="text-stone-900" />

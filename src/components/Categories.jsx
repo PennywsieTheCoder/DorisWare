@@ -1,5 +1,7 @@
 // src/components/Categories.jsx
 
+import { useNavigate } from "react-router-dom";
+
 const CATEGORIES = [
   {
     name: "Cookware",
@@ -29,17 +31,14 @@ const CATEGORIES = [
 ];
 
 export default function Categories({ onCategoryChange }) {
+  const navigate = useNavigate();
+
   const handleClick = (category) => {
     if (onCategoryChange) {
       onCategoryChange(category.filter);
-    }
-
-    const shop = document.getElementById("shop");
-
-    if (shop) {
-      shop.scrollIntoView({
-        behavior: "smooth",
-      });
+      document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate(`/shop?category=${encodeURIComponent(category.filter)}`);
     }
   };
 
@@ -50,7 +49,7 @@ export default function Categories({ onCategoryChange }) {
           Shop by category
         </p>
 
-        <h2 className="mt-2 font-serif text-3xl font-semibold text-stone-800 md:text-4xl">
+        <h2 className="mt-2 font-serif text-3xl font-semibold text-stone-800 dark:text-stone-100 md:text-4xl">
           Featured Categories
         </h2>
       </div>
@@ -63,7 +62,7 @@ export default function Categories({ onCategoryChange }) {
             onClick={() => handleClick(category)}
             className="group flex flex-col items-center focus:outline-none"
           >
-            <div className="relative h-28 w-28 overflow-hidden rounded-full ring-2 ring-stone-100 transition-all duration-300 group-hover:ring-amber-400 group-hover:shadow-lg md:h-32 md:w-32">
+            <div className="relative h-28 w-28 overflow-hidden rounded-full ring-2 ring-stone-100 transition-all duration-300 group-hover:ring-amber-400 group-hover:shadow-lg dark:ring-stone-800 md:h-32 md:w-32 lg:h-40 lg:w-40">
 
               <img
                 src={category.image}
@@ -73,7 +72,7 @@ export default function Categories({ onCategoryChange }) {
 
             </div>
 
-            <h3 className="mt-4 text-center text-sm font-semibold text-stone-700 transition-colors group-hover:text-amber-600 md:text-base">
+            <h3 className="mt-4 text-center text-sm font-semibold text-stone-700 transition-colors group-hover:text-amber-600 dark:text-stone-200 md:text-base lg:text-lg">
               {category.name}
             </h3>
           </button>

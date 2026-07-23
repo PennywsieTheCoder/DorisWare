@@ -1,205 +1,115 @@
 // src/components/Header.jsx
-//
-// Nothing new here vs what you built in Lesson 3 — nav links, a
-// mobile menu toggle using useState, and the storeName prop so this
-// component isn't locked to one hardcoded name.
 
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import {ShoppingCart,CircleX,Trash2 } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { CircleX, Leaf, Menu, Search, ShoppingCart, Trash2, User, X, Sun, Moon } from "lucide-react";
 import { useCart } from "../context/Cartcontext";
+import { useTheme } from "../context/Themecontext ";
+
 
 export default function Header({ storeName }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
+  const navigate = useNavigate();
   const isProductPage = location.pathname.startsWith("/product/");
   const { count, items, removeFromCart, updateQuantity, total, cartAlert, clearCartAlert, isCartOpen, openCart, closeCart } = useCart();
+  const { theme, toggleTheme } = useTheme();
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    navigate(query ? `/shop?search=${encodeURIComponent(query)}` : "/shop");
+  };
 
   return (
-    <header className="bg-stone-100 border-b border-stone-300 px-6 py-4 sticky top-0 z-10">
-      <div className="mx-auto flex items-center justify-between">
-        <Link
-  to="/"
-  className="font-serif text-xl font-semibold text-stone-800"
->
-  {storeName}
-</Link>
-        {/* <span className="font-serif text-xl font-semibold text-stone-800">
-          {storeName}
-        </span> */}
+    <>
+      <header className="sticky top-0 z-50 bg-white/90 dark:bg-stone-900/90 shadow-sm backdrop-blur">
+        <div className="flex h-20 w-full items-center justify-between px-6">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+              <Leaf className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <span className="text-2xl font-bold text-gray-800 dark:text-stone-100">{storeName}</span>
+          </Link>
 
-        <nav className="hidden sm:flex gap-6 text-sm font-medium text-stone-600 items-center">
+          <nav className="hidden items-center gap-8 text-sm font-medium lg:flex">
+            <NavLink to="/" end className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Home</NavLink>
+            <NavLink to="/shop" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Shop</NavLink>
+            <Link to="/#about" className="text-gray-600 dark:text-stone-300 hover:text-green-600">About</Link>
+            <Link to="/#contact" className="text-gray-600 dark:text-stone-300 hover:text-green-600">Contact</Link>
+          </nav>
 
-  <Link
-    to="/"
-    className="hover:text-stone-900"
-  >
-    Home
-  </Link>
+          <div className="hidden items-center gap-5 lg:flex">
+            <form onSubmit={handleSearch} className="flex items-center rounded-full bg-gray-100 dark:bg-stone-800 px-4 py-2">
+              <Search size={18} className="text-gray-400" />
+              <input
+                aria-label="Search products by name or category"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by product or category..."
+                className="ml-2 w-56 bg-transparent outline-none xl:w-72 text-gray-800 dark:text-stone-100 placeholder:text-gray-400 dark:placeholder:text-stone-500"
+              />
+            </form>
+            {!isProductPage && (
+              <button type="button" onClick={openCart} className="relative" aria-label="View cart">
+                <ShoppingCart className="text-gray-700 dark:text-stone-300" />
+                {count > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs text-white">{count}</span>}
+              </button>
+            )}
 
-
-  <Link
-    to="/shop"
-    className="hover:text-stone-900"
-  >
-    Shop
-  </Link>
-
-
-  <a
-    href="#about"
-    className="hover:text-stone-900"
-  >
-    About
-  </a>
-
-
-  <a
-    href="#contact"
-    className="hover:text-stone-900"
-  >
-    Contact
-  </a>
-
-
-  {!isProductPage && (
-    <button
-      type="button"
-      onClick={openCart}
-      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-stone-800 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100"
-      aria-label="View cart"
-    >
-      <ShoppingCart size={20} />
-
-      {count > 0 && (
-        <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-stone-900 px-1.5 text-[0.65rem] font-semibold text-white">
-          {count}
-        </span>
-      )}
-    </button>
-  )}
-
-</nav>
-
-        {/* <nav className="hidden sm:flex gap-6 text-sm font-medium text-stone-600 items-center">
-          <a href="#shop" className="hover:text-stone-900">Shop</a>
-          <a href="#about" className="hover:text-stone-900">About</a>
-          <a href="#contact" className="hover:text-stone-900">Contact</a>
-          {!isProductPage && (
+            {/* Dark mode toggle — desktop */}
             <button
               type="button"
-              onClick={openCart}
-              className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-stone-800 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100"
-              aria-label="View cart"
+              onClick={toggleTheme}
+              aria-label="Toggle dark mode"
+              aria-pressed={theme === "dark"}
+              className="text-gray-700 dark:text-stone-300 hover:text-green-600 dark:hover:text-green-400 transition"
             >
-              <ShoppingCart size={20} />
-              {count > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-stone-900 px-1.5 text-[0.65rem] font-semibold text-white">
-                  {count}
-                </span>
-              )}
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-          )}
-        </nav> */}
 
-        <button
-          className="sm:hidden text-stone-700 font-medium"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle menu"
-        >
-          {isOpen ? "Close ✕" : "Menu ☰"}
-        </button>
-      </div>
+            <button type="button" aria-label="User account"><User className="text-gray-700 dark:text-stone-300" /></button>
+          </div>
 
-      {isOpen && (
-        <nav className="sm:hidden flex flex-col mt-4 gap-3 text-sm font-medium text-stone-600">
+          <div className="flex items-center gap-4 lg:hidden">
+            {!isProductPage && (
+              <button type="button" onClick={openCart} className="relative" aria-label="View cart">
+                <ShoppingCart className="text-gray-700 dark:text-stone-300" />
+                {count > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs text-white">{count}</span>}
+              </button>
+            )}
+            <button type="button" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
+              {isOpen ? <X className="dark:text-stone-100" /> : <Menu className="dark:text-stone-100" />}
+            </button>
+          </div>
+        </div>
 
-  <Link
-    to="/"
-    onClick={() => setIsOpen(false)}
-    className="hover:text-stone-900"
-  >
-    Home
-  </Link>
+        {isOpen && (
+          <nav className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 lg:hidden">
+            <div className="flex flex-col gap-4 p-6 text-gray-600 dark:text-stone-300">
+              <Link to="/" onClick={() => setIsOpen(false)}>Home</Link>
+              <Link to="/shop" onClick={() => setIsOpen(false)}>Shop</Link>
+              <Link to="/#about" onClick={() => setIsOpen(false)}>About</Link>
+              <Link to="/#contact" onClick={() => setIsOpen(false)}>Contact</Link>
 
-
-  <Link
-    to="/shop"
-    onClick={() => setIsOpen(false)}
-    className="hover:text-stone-900"
-  >
-    Shop
-  </Link>
-
-
-  <a
-    href="#about"
-    onClick={() => setIsOpen(false)}
-    className="hover:text-stone-900"
-  >
-    About
-  </a>
-
-
-  <a
-    href="#contact"
-    onClick={() => setIsOpen(false)}
-    className="hover:text-stone-900"
-  >
-    Contact
-  </a>
-
-
-  {!isProductPage && (
-    <button
-      type="button"
-      onClick={() => {
-        openCart();
-        setIsOpen(false);
-      }}
-      className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-800 text-white shadow-sm transition hover:bg-stone-700"
-      aria-label="View cart"
-    >
-      <ShoppingCart size={20} />
-
-      {count > 0 && (
-        <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white text-[0.65rem] font-semibold text-stone-900">
-          {count}
-        </span>
-      )}
-    </button>
-  )}
-
-</nav>
-
-
-        // <nav className="sm:hidden flex flex-col mt-4 gap-3 text-sm font-medium text-stone-600">
-        //   <a href="#shop" onClick={() => setIsOpen(false)}>Shop</a>
-        //   <a href="#about" onClick={() => setIsOpen(false)}>About</a>
-        //   <a href="#contact" onClick={() => setIsOpen(false)}>Contact</a>
-        //   {!isProductPage && (
-        //     <button
-        //       type="button"
-        //       onClick={() => {
-        //         openCart();
-        //         setIsOpen(false);
-        //       }}
-        //       className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-800 text-white shadow-sm transition hover:bg-stone-700"
-        //       aria-label="View cart"
-        //     >
-        //       <ShoppingCart size={20} />
-        //       {count > 0 && (
-        //         <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-white text-[0.65rem] font-semibold text-stone-900">
-        //           {count}
-        //         </span>
-        //       )}
-        //     </button>
-        //   )}
-        // </nav>
-      )}
+              {/* Dark mode toggle — mobile */}
+              <button
+              type="button"
+              onClick={() => { toggleTheme(); setIsOpen(false); }}
+              aria-pressed={theme === "dark"}
+              className="flex items-center gap-2 text-left"
+              >
+                {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                {theme === "dark" ? "Light mode" : "Dark mode"}
+              </button>
+            </div>
+          </nav>
+        )}
+      </header>
 
       {isCartOpen && (
-        <div className="fixed inset-0 z-20 flex items-center justify-end bg-black/40 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/50 backdrop-blur-sm px-6 pt-24 pb-6">
           <button
             type="button"
             className="absolute inset-0"
@@ -207,30 +117,22 @@ export default function Header({ storeName }) {
             aria-label="Close cart modal"
           />
           <div
-            className="relative w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col h-[90vh]"
+            className="relative w-full max-w-md overflow-hidden rounded-[32px] bg-white dark:bg-stone-900 shadow-[0_25px_70px_rgba(0,0,0,0.18)] flex flex-col max-h-[calc(100vh-8rem)] animate-[slideIn_.25s_ease-out]"
             onClick={(event) => event.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-200">
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 px-7 py-5">
               <button
                 type="button"
                 onClick={closeCart}
-                className=" text-red-500 hover:text-stone-900"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-stone-800 text-gray-500 dark:text-stone-400 transition hover:bg-red-50 hover:text-red-500"
                 aria-label="Close cart"
               >
                 <CircleX size={20} />
               </button>
-              <h2 className="text-lg font-semibold text-stone-900">Cart</h2>
-              {<button
-                type="button"
-                className="text-stone-600 hover:text-stone-900"
-                aria-label="More options"
-              >
-                
-              </button>}
+              <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-stone-100">Cart</h2>
+              <span className="w-10" />
             </div>
 
-            {/* Alert */}
             {cartAlert && (
               <div className="mx-4 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
                 {cartAlert}
@@ -238,36 +140,32 @@ export default function Header({ storeName }) {
               </div>
             )}
 
-            {/* Items */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
               {items.length === 0 ? (
-                <p className="text-center text-sm text-stone-500 py-8">Your cart is empty</p>
+                <p className="text-center text-sm text-stone-500 dark:text-stone-400 py-8">Your cart is empty</p>
               ) : (
                 items.map((item) => (
-                  <div key={item.id} className="flex gap-4 pb-4 border-b border-stone-200 last:border-0">
-                    {/* Image */}
+                  <div key={item.id} className="flex gap-4 rounded-2xl p-3 transition hover:bg-gray-50 dark:hover:bg-stone-800">
                     <div className="shrink-0">
                       {item.images && item.images[0] ? (
                         <img
                           src={item.images[0]}
                           alt={item.name}
-                          className="h-20 w-20 rounded-lg object-contain bg-stone-100"
+                          className="h-24 w-24 rounded-2xl bg-gray-100 dark:bg-stone-800 object-contain p-2"
                         />
                       ) : (
-                        <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-stone-200 text-xs text-stone-500">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-stone-200 dark:bg-stone-700 text-xs text-stone-500">
                           IMG
                         </div>
                       )}
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-stone-900 truncate">{item.name}</p>
-                      <p className="text-xs text-stone-500 truncate">{item.description}</p>
-                      <p className="text-sm font-semibold text-stone-900 mt-1">£{item.unitPrice.toFixed(2)}</p>
+                      <p className="font-semibold text-stone-900 dark:text-stone-100 truncate">{item.name}</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 truncate">{item.description}</p>
+                      <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 mt-1">£{item.unitPrice.toFixed(2)}</p>
                     </div>
 
-                    {/* Remove button */}
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.id)}
@@ -283,61 +181,57 @@ export default function Header({ storeName }) {
 
             {items.length > 0 && (
               <>
-                {/* Quantity and Total Controls */}
-                <div className="px-4 py-4 border-t border-stone-200 space-y-4">
-                  {/* Items with quantity controls */}
+                <div className="px-4 py-4 border-t border-stone-200 dark:border-stone-800 space-y-4">
                   <div className="space-y-3">
                     {items.map((item) => (
                       <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-sm text-stone-600">{item.name}</span>
+                        <span className="text-sm text-stone-600 dark:text-stone-300">{item.name}</span>
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             disabled={Number(item.stockQuantity ?? 0) <= 0}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border border-stone-300 text-stone-600 hover:bg-stone-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-6 w-6 items-center justify-center rounded-xl border border-gray-200 dark:border-stone-700 bg-gray-50 dark:bg-stone-800 hover:bg-green-500 hover:text-white transition text-stone-600 dark:text-stone-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label="Decrease quantity"
                           >
                             −
                           </button>
-                          <span className="w-6 text-center text-sm font-medium text-stone-900">{item.quantity}</span>
+                          <span className="w-6 text-center text-sm font-medium text-stone-900 dark:text-stone-100">{item.quantity}</span>
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             disabled={Number(item.stockQuantity ?? 0) <= 0}
-                            className="flex h-6 w-6 items-center justify-center rounded-full border border-stone-300 text-stone-600 hover:bg-stone-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex h-6 w-6 items-center justify-center rounded-xl border border-gray-200 dark:border-stone-700 bg-gray-50 dark:bg-stone-800 hover:bg-green-500 hover:text-white transition text-stone-600 dark:text-stone-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label="Increase quantity"
                           >
                             +
                           </button>
-                          <span className="w-14 text-right text-sm font-semibold text-stone-900">£{(item.unitPrice * item.quantity).toFixed(2)}</span>
+                          <span className="w-14 text-right text-sm font-semibold text-stone-900 dark:text-stone-100">£{(item.unitPrice * item.quantity).toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Totals */}
-                  <div className="space-y-2 pt-4 border-t border-stone-200">
-                    <div className="flex justify-between text-sm text-stone-600">
+                  <div className="space-y-3 rounded-2xl bg-gray-50 dark:bg-stone-800 p-4">
+                    <div className="flex justify-between text-sm text-stone-600 dark:text-stone-300">
                       <span>Sub total</span>
                       <span>£{(items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm text-stone-600">
+                    <div className="flex justify-between text-sm text-stone-600 dark:text-stone-300">
                       <span>Shipping & tax</span>
                       <span>£5.00</span>
                     </div>
-                    <div className="flex justify-between text-base font-bold text-stone-900 pt-2 border-t border-stone-200">
+                    <div className="flex justify-between text-base font-bold text-stone-900 dark:text-stone-100 pt-2 border-t border-stone-200 dark:border-stone-700">
                       <span>Total</span>
                       <span>{total}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Checkout Button */}
-                <div className="px-4 pb-4">
+                <div className="sticky bottom-0 border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-5">
                   <button
                     type="button"
-                    className="w-full rounded-full bg-orange-500 text-white font-semibold py-3 hover:bg-orange-600 transition"
+                    className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-green-600 py-4 font-semibold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                   >
                     Checkout Now
                   </button>
@@ -347,6 +241,6 @@ export default function Header({ storeName }) {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

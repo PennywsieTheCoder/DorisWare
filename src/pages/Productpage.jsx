@@ -32,12 +32,12 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4 dark:bg-stone-950">
         <div className="text-center">
-          <p className="text-stone-600 mb-6 text-lg">That product doesn't exist.</p>
+          <p className="text-stone-600 dark:text-stone-300 mb-6 text-lg">That product doesn't exist.</p>
           <button
-            onClick={() => navigate("/")}
-            className="bg-black text-white rounded-full px-6 py-2 font-semibold hover:bg-stone-800 transition"
+            onClick={() => navigate("/shop")}
+            className="bg-black text-white rounded-full px-6 py-2 font-semibold hover:bg-stone-800 transition dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
           >
             Back to shop
           </button>
@@ -76,15 +76,15 @@ export default function ProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-white flex flex-col dark:bg-stone-950">
+      <div className="sticky top-0 z-10 bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between dark:border-stone-800 dark:bg-stone-900">
         {isCartView ? (
           <>
             <span className="w-5" />
-            <h1 className="text-sm font-semibold text-stone-900">Cart</h1>
+            <h1 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Cart</h1>
             <button
               onClick={() => setIsCartView(false)}
-              className="text-stone-600 hover:text-stone-900"
+              className="text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
               aria-label="Close cart"
             >
               <X size={20} />
@@ -93,17 +93,17 @@ export default function ProductPage() {
         ) : (
           <>
             <button
-              onClick={() => navigate("/")}
-              className="text-stone-600 hover:text-stone-900"
+              onClick={() => navigate("/shop")}
+              className="text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
               aria-label="Back"
             >
               <ChevronLeft size={20} />
             </button>
 
-            <h1 className="text-sm font-semibold text-stone-900">Product Details</h1>
+            <h1 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Product Details</h1>
             <button
               onClick={() => setIsCartView(true)}
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-stone-800 transition hover:bg-stone-200"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-100 text-stone-800 transition hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-100 dark:hover:bg-stone-700"
               aria-label="View cart"
             >
               <ShoppingCart size={18} />
@@ -120,9 +120,9 @@ export default function ProductPage() {
       {isCartView ? (
         <div className="flex-1 w-full max-w-md mx-auto px-4 py-4 flex flex-col">
           {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 px-6 py-10 text-center">
-              <p className="text-base font-semibold text-stone-900">Your cart is empty</p>
-              <p className="mt-2 text-sm text-stone-500">Add a product to see it appear here.</p>
+            <div className="flex-1 flex flex-col items-center justify-center rounded-2xl border border-dashed border-stone-300 px-6 py-10 text-center dark:border-stone-700">
+              <p className="text-base font-semibold text-stone-900 dark:text-stone-100">Your cart is empty</p>
+              <p className="mt-2 text-sm text-stone-500 dark:text-stone-300">Add a product to see it appear here.</p>
             </div>
           ) : (
             <>
@@ -131,22 +131,22 @@ export default function ProductPage() {
                   const imageSrc = item.images?.[0] ?? item.image ?? "";
 
                   return (
-                    <div key={item.id} className="rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
+                    <div key={item.id} className="rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-stone-700 dark:bg-stone-900">
                       <div className="flex gap-3">
-                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl bg-stone-100">
+                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-800">
                           {imageSrc ? (
                             <img src={imageSrc} alt={item.name} className="h-full w-full object-contain p-2" />
                           ) : (
-                            <div className="text-xs text-stone-400">No image</div>
+                            <div className="text-xs text-stone-400 dark:text-stone-500">No image</div>
                           )}
                         </div>
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="text-sm font-semibold text-stone-900">{item.name}</p>
-                              <p className="mt-1 text-xs text-stone-500">{item.description}</p>
-                              <p className="mt-2 text-sm font-semibold text-stone-900">£{item.unitPrice.toFixed(2)}</p>
+                              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{item.name}</p>
+                              <p className="mt-1 text-xs text-stone-500 dark:text-stone-300">{item.description}</p>
+                              <p className="mt-2 text-sm font-semibold text-stone-900 dark:text-stone-100">£{item.unitPrice.toFixed(2)}</p>
                             </div>
                             <button
                               type="button"
@@ -159,7 +159,7 @@ export default function ProductPage() {
                           </div>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-2 py-1">
+                            <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-2 py-1 dark:border-stone-700 dark:bg-stone-800">
                               <button
                                 type="button"
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -168,7 +168,7 @@ export default function ProductPage() {
                               >
                                 −
                               </button>
-                              <span className="w-5 text-center text-sm font-semibold text-stone-900">{item.quantity}</span>
+                              <span className="w-5 text-center text-sm font-semibold text-stone-900 dark:text-stone-100">{item.quantity}</span>
                               <button
                                 type="button"
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
@@ -178,7 +178,7 @@ export default function ProductPage() {
                                 +
                               </button>
                             </div>
-                            <p className="text-sm font-semibold text-stone-900">£{(item.unitPrice * item.quantity).toFixed(2)}</p>
+                            <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">£{(item.unitPrice * item.quantity).toFixed(2)}</p>
                           </div>
                         </div>
                       </div>
@@ -187,16 +187,16 @@ export default function ProductPage() {
                 })}
               </div>
 
-              <div className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                <div className="flex items-center justify-between text-sm text-stone-600">
+              <div className="mt-6 rounded-2xl border border-stone-200 bg-stone-50 p-4 dark:border-stone-700 dark:bg-stone-900">
+                <div className="flex items-center justify-between text-sm text-stone-600 dark:text-stone-300">
                   <span>Subtotal</span>
                   <span>£{subtotal.toFixed(2)}</span>
                 </div>
-                <div className="mt-2 flex items-center justify-between text-sm text-stone-600">
+                <div className="mt-2 flex items-center justify-between text-sm text-stone-600 dark:text-stone-300">
                   <span>Shipping & tax</span>
                   <span>£{shippingAndTax.toFixed(2)}</span>
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-stone-200 pt-3 text-base font-semibold text-stone-900">
+                <div className="mt-3 flex items-center justify-between border-t border-stone-200 pt-3 text-base font-semibold text-stone-900 dark:border-stone-700 dark:text-stone-100">
                   <span>Total</span>
                   <span>£{total.toFixed(2)}</span>
                 </div>
@@ -213,7 +213,7 @@ export default function ProductPage() {
       ) : (
         <div className="flex-1 flex flex-col items-center w-full max-w-md mx-auto">
           <div className="w-full px-4 pt-6">
-            <div className="bg-stone-100 rounded-2xl flex items-center justify-center py-8">
+            <div className="bg-stone-100 rounded-2xl flex items-center justify-center py-8 dark:bg-stone-800">
               {product.images && product.images.length > 0 ? (
                 <img
                   src={product.images[0]}
@@ -221,14 +221,14 @@ export default function ProductPage() {
                   className="max-h-64 object-contain"
                 />
               ) : (
-                <div className="h-64 flex items-center justify-center text-stone-400">
+                <div className="h-64 flex items-center justify-center text-stone-400 dark:text-stone-500">
                   No image
                 </div>
               )}
             </div>
 
             <div className="flex justify-center -mt-5">
-              <div className="flex items-center gap-4 bg-white border border-stone-200 rounded-full shadow-md px-3 py-1.5">
+              <div className="flex items-center gap-4 bg-white border border-stone-200 rounded-full shadow-md px-3 py-1.5 dark:border-stone-700 dark:bg-stone-900 dark:shadow-black/30">
                 <button
                   onClick={() => handleQuantityChange(-1)}
                   disabled={selectedQuantity <= 1 || isOutOfStock}
@@ -236,7 +236,7 @@ export default function ProductPage() {
                 >
                   −
                 </button>
-                <span className="w-6 text-center text-sm font-semibold text-stone-900">
+                <span className="w-6 text-center text-sm font-semibold text-stone-900 dark:text-stone-100">
                   {String(selectedQuantity).padStart(2, "0")}
                 </span>
                 <button
@@ -252,7 +252,7 @@ export default function ProductPage() {
 
           <div className="w-full px-4 pt-4 pb-6 space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-xl font-bold text-stone-900 leading-snug">
+              <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100 leading-snug">
                 {product.name}
               </h1>
               <button
@@ -263,14 +263,14 @@ export default function ProductPage() {
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-stone-500">
+            <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Available on fast delivery
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-stone-900">{product.price}</span>
+                <span className="text-xl font-bold text-stone-900 dark:text-stone-100">{product.price}</span>
                 <span className="text-xs text-stone-400 line-through">£{originalPrice}</span>
                 <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
                   {discountPercent}%
@@ -278,7 +278,7 @@ export default function ProductPage() {
               </div>
               <div className="flex items-center gap-1">
                 <Star size={14} className="fill-amber-400 text-amber-400" />
-                <span className="text-xs text-stone-600">4.5 Rating</span>
+                <span className="text-xs text-stone-600 dark:text-stone-300">4.5 Rating</span>
               </div>
             </div>
 
@@ -306,11 +306,11 @@ export default function ProductPage() {
             )}
 
             <div>
-              <h3 className="text-xs font-semibold text-stone-900 mb-1">Description</h3>
-              <p className="text-xs text-stone-600 leading-relaxed">
+              <h3 className="text-xs font-semibold text-stone-900 dark:text-stone-100 mb-1">Description</h3>
+              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
                 {product.description}
                 {product.description && (
-                  <button className="ml-1 font-semibold text-stone-900 hover:underline">
+                  <button className="ml-1 font-semibold text-stone-900 hover:underline dark:text-stone-100">
                     Read More
                   </button>
                 )}
@@ -320,7 +320,7 @@ export default function ProductPage() {
             <button
               onClick={handleAddToCart}
               disabled={isOutOfStock}
-              className="w-full bg-black text-white rounded-full py-3 font-semibold flex items-center justify-center gap-2 text-sm hover:bg-stone-800 transition disabled:cursor-not-allowed disabled:opacity-60 mt-2"
+              className="w-full bg-black text-white rounded-full py-3 font-semibold flex items-center justify-center gap-2 text-sm hover:bg-stone-800 transition disabled:cursor-not-allowed disabled:opacity-60 mt-2 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
             >
               <ShoppingCart size={18} />
               {isOutOfStock ? "Sold out" : "Add to Cart"}

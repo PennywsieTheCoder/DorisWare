@@ -13,16 +13,16 @@ export default function About({ storyText }) {
   return (
     <section id="about" className="max-w-5xl mx-auto px-6 py-16 grid sm:grid-cols-2 gap-10 items-center">
       <div>
-        <h2 className="font-serif text-2xl font-semibold text-stone-800 mb-4">
+        <h2 className="font-serif text-2xl font-semibold text-stone-800 dark:text-stone-100 mb-4">
           Why this shop exists
         </h2>
-        <p className="text-sm text-stone-600 leading-relaxed">
+        <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
           {storyText}
         </p>
       </div>
 
-      <div className="bg-stone-50 border border-stone-300 rounded p-6">
-        <p className="font-serif italic text-lg text-stone-800">
+      <div className="bg-stone-50 border border-stone-300 rounded p-6 dark:border-stone-700 dark:bg-stone-900">
+        <p className="font-serif italic text-lg text-stone-800 dark:text-stone-100">
           "What is Lorem Ipsum?
 Lorem Ipsum is simply dummy text of the printing and typesetting industry.
         </p>

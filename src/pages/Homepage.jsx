@@ -1,60 +1,23 @@
 // src/pages/HomePage.jsx
 
-import { useState } from "react";
 import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import FeaturedProducts from "../components/Featuredproducts";
-import ProductCard from "../components/Productcard";
-import Filters from "../components/Filters";
 import PromoBanner from "../components/Promobanner";
 import About from "../components/About";
 import NewsletterSignup from "../components/Signup";
-import { PRODUCTS } from "../data/products";
 import WhyChooseUs from "../components/Whychooseus";
 import Testimonials from "../components/Testimonials";
 
 
 export default function HomePage() {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-
-  const categories = [
-    "All",
-    ...Array.from(
-      new Set(PRODUCTS.map((product) => product.category))
-    ).sort(),
-  ];
-
-  const filtered = PRODUCTS.filter((product) => {
-    const searchMatches = product.name
-      .toLowerCase()
-      .includes(query.toLowerCase());
-
-    const categoryMatches =
-      category === "All" || product.category === category;
-
-    const priceValue = Number(
-      product.price.replace(/[^0-9.]/g, "")
-    );
-
-    const minValue = minPrice !== "" ? Number(minPrice) : 0;
-    const maxValue = maxPrice !== "" ? Number(maxPrice) : Infinity;
-
-    const priceMatches =
-      priceValue >= minValue && priceValue <= maxValue;
-
-    return searchMatches && categoryMatches && priceMatches;
-  });
-
   return (
     <>
       {/* Hero Section */}
       <Hero />
 
       {/* Featured Categories */}
-      <Categories onCategoryChange={setCategory} />
+      <Categories />
 
       {/* Featured Products */}
       <FeaturedProducts limit={4} />

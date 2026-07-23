@@ -1,6 +1,7 @@
 // src/pages/ShopPage.jsx
 
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import ProductCard from "../components/Productcard";
@@ -9,10 +10,23 @@ import NewsletterSignup from "../components/Signup";
 import { PRODUCTS } from "../data/products";
 
 export default function ShopPage() {
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("All");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("search") ?? "";
+  const category = searchParams.get("category") ?? "All";
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+
+  const updateFilterParam = (name, value) => {
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (!value || (name === "category" && value === "All")) {
+      nextParams.delete(name);
+    } else {
+      nextParams.set(name, value);
+    }
+
+    setSearchParams(nextParams);
+  };
 
   const categories = [
     "All",
@@ -22,9 +36,10 @@ export default function ShopPage() {
   ];
 
   const filtered = PRODUCTS.filter((product) => {
-    const searchMatches = product.name
-      .toLowerCase()
-      .includes(query.toLowerCase());
+    const normalizedQuery = query.toLowerCase();
+    const searchMatches =
+      product.name.toLowerCase().includes(normalizedQuery) ||
+      product.category.toLowerCase().includes(normalizedQuery);
 
     const categoryMatches =
       category === "All" || product.category === category;
@@ -55,30 +70,29 @@ export default function ShopPage() {
       <Hero />
 
       <Categories
-        onCategoryChange={setCategory}
+        onCategoryChange={(value) => updateFilterParam("category", value)}
       />
 
       <section
         id="shop"
         className="max-w-6xl mx-auto px-6 py-16"
       >
-        <Filters
-          query={query}
-          onChange={setQuery}
-          category={category}
-          categories={categories}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onCategoryChange={setCategory}
-          onMinPriceChange={setMinPrice}
-          onMaxPriceChange={setMaxPrice}
-        />
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <h2 className="font-serif text-3xl font-semibold text-stone-800 dark:text-stone-100">
+            Shop All Products
+          </h2>
+          <Filters
+            category={category}
+            categories={categories}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            onCategoryChange={(value) => updateFilterParam("category", value)}
+            onMinPriceChange={setMinPrice}
+            onMaxPriceChange={setMaxPrice}
+          />
+        </div>
 
-        <h2 className="mb-8 font-serif text-3xl font-semibold text-stone-800">
-          Shop All Products
-        </h2>
-
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-3 lg:gap-7">
           {filtered.map((product) => (
             <ProductCard
               key={product.id}
@@ -88,13 +102,13 @@ export default function ShopPage() {
         </div>
       </section>
 
-      <section className="border-t border-stone-200">
+      <section className="border-t border-stone-200 dark:border-stone-800">
         <div className="mx-auto max-w-5xl px-6 py-16">
-          <h2 className="mb-3 font-serif text-2xl font-semibold text-stone-800">
+          <h2 className="mb-3 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-100">
             Stay in the Loop
           </h2>
 
-          <p className="mb-6 text-stone-500">
+          <p className="mb-6 text-stone-500 dark:text-stone-300">
             Be the first to hear about new arrivals,
             special offers, and exclusive kitchen tips.
           </p>

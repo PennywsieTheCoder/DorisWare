@@ -136,6 +136,7 @@ export function CartProvider({ children }) {
 // Step 3: a small helper hook so components don't need to import
 // both useContext AND CartContext everywhere — they just import
 // this one function.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCart() {
   return useContext(CartContext);
 }
