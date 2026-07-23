@@ -35,7 +35,7 @@ export default function Filters({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-14 z-20 w-80 rounded-2xl border border-stone-200 bg-white p-5 shadow-xl dark:border-stone-700 dark:bg-stone-900">
+        <div className="absolute right-0 top-14 z-20 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-stone-200 bg-white p-4 shadow-xl dark:border-stone-700 dark:bg-stone-900 sm:p-5">
           <div className="mb-5 flex items-center justify-between">
             <h3 className="font-semibold text-stone-900 dark:text-stone-100">Filter products</h3>
             <button

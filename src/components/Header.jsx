@@ -25,12 +25,12 @@ export default function Header({ storeName }) {
   return (
     <>
       <header className="sticky top-0 z-50 bg-white/90 dark:bg-stone-900/90 shadow-sm backdrop-blur">
-        <div className="flex h-20 w-full items-center justify-between px-6">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+        <div className="flex h-20 w-full items-center justify-between gap-3 px-4 sm:px-6">
+          <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900 sm:h-11 sm:w-11">
               <Leaf className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-2xl font-bold text-gray-800 dark:text-stone-100">{storeName}</span>
+            <span className="truncate text-lg font-bold text-gray-800 dark:text-stone-100 sm:text-2xl">{storeName}</span>
           </Link>
 
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex">
@@ -72,7 +72,7 @@ export default function Header({ storeName }) {
             <button type="button" aria-label="User account"><User className="text-gray-700 dark:text-stone-300" /></button>
           </div>
 
-          <div className="flex items-center gap-4 lg:hidden">
+          <div className="flex shrink-0 items-center gap-3 lg:hidden">
             {!isProductPage && (
               <button type="button" onClick={openCart} className="relative" aria-label="View cart">
                 <ShoppingCart className="text-gray-700 dark:text-stone-300" />
@@ -109,7 +109,7 @@ export default function Header({ storeName }) {
       </header>
 
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/50 backdrop-blur-sm px-6 pt-24 pb-6">
+        <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/50 px-3 pt-20 pb-3 backdrop-blur-sm sm:px-6 sm:pt-24 sm:pb-6">
           <button
             type="button"
             className="absolute inset-0"
@@ -120,7 +120,7 @@ export default function Header({ storeName }) {
             className="relative w-full max-w-md overflow-hidden rounded-[32px] bg-white dark:bg-stone-900 shadow-[0_25px_70px_rgba(0,0,0,0.18)] flex flex-col max-h-[calc(100vh-8rem)] animate-[slideIn_.25s_ease-out]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 px-7 py-5">
+            <div className="flex items-center justify-between border-b border-stone-100 bg-white px-4 py-4 dark:border-stone-800 dark:bg-stone-900 sm:px-7 sm:py-5">
               <button
                 type="button"
                 onClick={closeCart}
@@ -184,9 +184,9 @@ export default function Header({ storeName }) {
                 <div className="px-4 py-4 border-t border-stone-200 dark:border-stone-800 space-y-4">
                   <div className="space-y-3">
                     {items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between">
-                        <span className="text-sm text-stone-600 dark:text-stone-300">{item.name}</span>
-                        <div className="flex items-center gap-3">
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 flex-1 truncate text-sm text-stone-600 dark:text-stone-300">{item.name}</span>
+                        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}

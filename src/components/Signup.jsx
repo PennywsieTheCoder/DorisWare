@@ -35,18 +35,18 @@ export default function NewsletterSignup() {
             Thanks — you're on the list.
           </p>
         ) : (
-          <form onSubmit={handleSubmit} className="flex gap-2 max-w-sm">
+          <form onSubmit={handleSubmit} className="flex max-w-sm flex-col gap-2 sm:flex-row">
             <input
               type="email"
               required
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 rounded px-3 py-2 text-sm flex-1 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500"
+              className="w-full flex-1 rounded border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100 dark:placeholder:text-stone-500"
             />
             <button
               type="submit"
-              className="bg-stone-800 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-amber-800 transition-colors dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
+              className="w-full rounded bg-stone-800 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-amber-800 dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 sm:w-auto"
             >
               Sign up
             </button>

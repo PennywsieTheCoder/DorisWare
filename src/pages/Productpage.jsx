@@ -133,7 +133,7 @@ export default function ProductPage() {
                   return (
                     <div key={item.id} className="rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-stone-700 dark:bg-stone-900">
                       <div className="flex gap-3">
-                        <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-800">
+                        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-stone-100 dark:bg-stone-800 sm:h-24 sm:w-24">
                           {imageSrc ? (
                             <img src={imageSrc} alt={item.name} className="h-full w-full object-contain p-2" />
                           ) : (
@@ -143,9 +143,9 @@ export default function ProductPage() {
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{item.name}</p>
-                              <p className="mt-1 text-xs text-stone-500 dark:text-stone-300">{item.description}</p>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-stone-900 dark:text-stone-100">{item.name}</p>
+                              <p className="mt-1 line-clamp-2 text-xs text-stone-500 dark:text-stone-300">{item.description}</p>
                               <p className="mt-2 text-sm font-semibold text-stone-900 dark:text-stone-100">£{item.unitPrice.toFixed(2)}</p>
                             </div>
                             <button
@@ -158,7 +158,7 @@ export default function ProductPage() {
                             </button>
                           </div>
 
-                          <div className="mt-3 flex items-center justify-between">
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-2 rounded-full border border-stone-200 bg-stone-50 px-2 py-1 dark:border-stone-700 dark:bg-stone-800">
                               <button
                                 type="button"
@@ -252,7 +252,7 @@ export default function ProductPage() {
 
           <div className="w-full px-4 pt-4 pb-6 space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-xl font-bold text-stone-900 dark:text-stone-100 leading-snug">
+              <h1 className="min-w-0 break-words text-xl font-bold leading-snug text-stone-900 dark:text-stone-100 sm:text-2xl">
                 {product.name}
               </h1>
               <button
@@ -268,15 +268,15 @@ export default function ProductPage() {
               Available on fast delivery
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-baseline gap-2">
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <span className="text-xl font-bold text-stone-900 dark:text-stone-100">{product.price}</span>
                 <span className="text-xs text-stone-400 line-through">£{originalPrice}</span>
                 <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
                   {discountPercent}%
                 </span>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 whitespace-nowrap">
                 <Star size={14} className="fill-amber-400 text-amber-400" />
                 <span className="text-xs text-stone-600 dark:text-stone-300">4.5 Rating</span>
               </div>

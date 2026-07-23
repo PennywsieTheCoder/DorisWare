@@ -43,7 +43,7 @@ export default function Categories({ onCategoryChange }) {
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
+    <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
       <div className="mb-12 text-center">
         <p className="font-mono text-xs uppercase tracking-[3px] text-amber-600">
           Shop by category
@@ -54,7 +54,7 @@ export default function Categories({ onCategoryChange }) {
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-8 lg:grid-cols-5">
         {CATEGORIES.map((category) => (
           <button
             key={category.name}
@@ -62,7 +62,7 @@ export default function Categories({ onCategoryChange }) {
             onClick={() => handleClick(category)}
             className="group flex flex-col items-center focus:outline-none"
           >
-            <div className="relative h-28 w-28 overflow-hidden rounded-full ring-2 ring-stone-100 transition-all duration-300 group-hover:ring-amber-400 group-hover:shadow-lg dark:ring-stone-800 md:h-32 md:w-32 lg:h-40 lg:w-40">
+            <div className="relative h-24 w-24 overflow-hidden rounded-full ring-2 ring-stone-100 transition-all duration-300 group-hover:ring-amber-400 group-hover:shadow-lg dark:ring-stone-800 sm:h-28 sm:w-28 md:h-32 md:w-32 lg:h-40 lg:w-40">
 
               <img
                 src={category.image}
@@ -72,7 +72,7 @@ export default function Categories({ onCategoryChange }) {
 
             </div>
 
-            <h3 className="mt-4 text-center text-sm font-semibold text-stone-700 transition-colors group-hover:text-amber-600 dark:text-stone-200 md:text-base lg:text-lg">
+            <h3 className="mt-3 text-center text-sm font-semibold text-stone-700 transition-colors group-hover:text-amber-600 dark:text-stone-200 sm:mt-4 md:text-base lg:text-lg">
               {category.name}
             </h3>
           </button>

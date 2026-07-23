@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative h-[650px] overflow-hidden">
+    <section className="relative h-[560px] overflow-hidden sm:h-[650px]">
 
       {/* Background Image */}
       <img
@@ -19,33 +19,33 @@ export default function Hero() {
 
 
       {/* Content */}
-      <div className="relative z-1 mx-auto flex h-full max-w-6xl items-center px-6">
+      <div className="relative z-1 mx-auto flex h-full max-w-6xl items-center px-4 sm:px-6">
         <div className="max-w-2xl text-white">
 
-          <span className="text-sm font-medium uppercase tracking-[4px] text-amber-300">
+          <span className="text-xs font-medium uppercase tracking-[3px] text-amber-300 sm:text-sm sm:tracking-[4px]">
             DorisWare Collection
           </span>
 
 
-          <h1 className="mt-4 text-5xl font-bold leading-tight md:text-7xl">
+          <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl md:text-7xl">
             Cook Better.
             <br />
             Live Better.
           </h1>
 
 
-          <p className="mt-6 text-lg text-gray-200 md:text-xl">
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-200 sm:mt-6 sm:text-lg md:text-xl">
             Premium cookware, kitchen tools, and household essentials
             carefully selected for every home kitchen.
           </p>
 
 
-          <div className="mt-8 flex flex-wrap gap-4">
+          <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-4">
 
             {/* Shop Page Button */}
             <Link
               to="/shop"
-              className="rounded-lg bg-amber-500 px-6 py-3 font-semibold text-white transition-colors hover:bg-amber-600"
+              className="w-full rounded-lg bg-amber-500 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-amber-600 sm:w-auto"
             >
               Shop Collection
             </Link>
@@ -54,7 +54,7 @@ export default function Hero() {
             {/* About Section Button */}
             <Link
               to="/#about"
-              className="flex items-center gap-2 rounded-lg border border-white px-6 py-3 font-semibold text-white transition-colors hover:bg-white hover:text-stone-900"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white px-6 py-3 font-semibold text-white transition-colors hover:bg-white hover:text-stone-900 sm:w-auto"
             >
               Our Story
               <ChevronRight size={18} />

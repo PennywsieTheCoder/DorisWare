@@ -52,27 +52,27 @@ export default function ProductCard({
         <ProductImageCarousel images={images} name={name} />
       </div>
 
-      <div className="p-4">
-        <h3 className="text-lg font-bold leading-tight text-stone-900 dark:text-stone-100">{name}</h3>
+      <div className="p-3 sm:p-4">
+        <h3 className="text-base font-bold leading-tight text-stone-900 dark:text-stone-100 sm:text-lg">{name}</h3>
 
         {tagline && (
           <p className="text-stone-400 dark:text-stone-400 text-sm mt-0.5">{tagline}</p>
         )}
 
-        <p className="text-stone-500 dark:text-stone-300 text-sm mt-2">{description}</p>
+        <p className="mt-2 text-xs leading-relaxed text-stone-500 dark:text-stone-300 sm:text-sm">{description}</p>
 
         <div className="mt-3">
           {isOutOfStock ? (
-            <p className="text-sm font-medium text-red-600">Out of stock</p>
+            <p className="text-xs font-medium text-red-600 sm:text-sm">Out of stock</p>
           ) : isLowStock ? (
-            <p className="text-sm font-medium text-amber-600">Only {quantity} left</p>
+            <p className="text-xs font-medium text-amber-600 sm:text-sm">Only {quantity} left</p>
           ) : (
-            <p className="text-sm font-medium text-emerald-600">In stock</p>
+            <p className="text-xs font-medium text-emerald-600 sm:text-sm">In stock</p>
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <span className="font-bold text-lg text-stone-900 dark:text-stone-100">{price}</span>
+        <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-base font-bold text-stone-900 dark:text-stone-100 sm:text-lg">{price}</span>
           <button
             type="button"
             onClick={(event) => {
@@ -80,7 +80,7 @@ export default function ProductCard({
               addToCart(productItem);
             }}
             disabled={isOutOfStock}
-            className="bg-stone-100 text-stone-900 rounded-full px-3 py-2 flex items-center gap-2 text-sm font-semibold hover:bg-amber-100 transition-colors disabled:cursor-not-allowed disabled:opacity-60 dark:bg-stone-800 dark:text-stone-100 dark:hover:bg-stone-700"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-stone-100 px-3 py-2 text-xs font-semibold text-stone-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-stone-800 dark:text-stone-100 dark:hover:bg-stone-700 sm:w-auto sm:text-sm"
           >
             <ShoppingCart size={20} />
             {isOutOfStock ? "Sold out" : "Add to cart"}

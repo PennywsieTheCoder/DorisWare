@@ -5,8 +5,8 @@ import { Link } from "react-router-dom";
 
 export default function PromoBanner() {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-100 via-amber-50 to-stone-100 px-8 py-14 md:px-16 md:py-20 dark:from-amber-950 dark:via-stone-900 dark:to-stone-800">
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-100 via-amber-50 to-stone-100 px-6 py-10 sm:px-8 sm:py-14 md:px-16 md:py-20 dark:from-amber-950 dark:via-stone-900 dark:to-stone-800">
 
         {/* Decorative circles */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-200/50 blur-2xl" />
@@ -21,7 +21,7 @@ export default function PromoBanner() {
           </p>
 
 
-          <h2 className="mt-3 font-serif text-4xl font-bold leading-tight text-stone-800 dark:text-stone-100 md:text-5xl">
+          <h2 className="mt-3 font-serif text-3xl font-bold leading-tight text-stone-800 dark:text-stone-100 sm:text-4xl md:text-5xl">
             Summer Sale
             <span className="block text-amber-600">
               Up to 30% Off

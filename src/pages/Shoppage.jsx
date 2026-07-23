@@ -77,8 +77,8 @@ export default function ShopPage() {
         id="shop"
         className="max-w-6xl mx-auto px-6 py-16"
       >
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <h2 className="font-serif text-3xl font-semibold text-stone-800 dark:text-stone-100">
+        <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-serif text-2xl font-semibold text-stone-800 dark:text-stone-100 sm:text-3xl">
             Shop All Products
           </h2>
           <Filters
