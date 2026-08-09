@@ -6,7 +6,6 @@ import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import ProductCard from "../components/Productcard";
 import Filters from "../components/Filters";
-import NewsletterSignup from "../components/Signup";
 import { PRODUCTS } from "../data/products";
 
 export default function ShopPage() {
@@ -92,17 +91,23 @@ export default function ShopPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-3 lg:gap-7">
+        {filtered.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-stone-300 px-6 py-16 text-center dark:border-stone-700">
+            <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100">No products found</h3>
+            <p className="mt-2 text-stone-500 dark:text-stone-400">Try a different search, category, or price range.</p>
+            <button type="button" onClick={() => { setMinPrice(""); setMaxPrice(""); setSearchParams({}); }} className="mt-5 rounded-full bg-stone-900 px-5 py-2 text-sm font-semibold text-white dark:bg-amber-500 dark:text-stone-950">Clear filters</button>
+          </div>
+        ) : <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-3 lg:gap-7">
           {filtered.map((product) => (
             <ProductCard
               key={product.id}
               {...product}
             />
           ))}
-        </div>
+        </div>}
       </section>
 
-      <section className="border-t border-stone-200 dark:border-stone-800">
+      {/* <section className="border-t border-stone-200 dark:border-stone-800">
         <div className="mx-auto max-w-5xl px-6 py-16">
           <h2 className="mb-3 font-serif text-2xl font-semibold text-stone-800 dark:text-stone-100">
             Stay in the Loop
@@ -115,7 +120,7 @@ export default function ShopPage() {
 
           <NewsletterSignup />
         </div>
-      </section>
+      </section> */}
     </>
   );
 }

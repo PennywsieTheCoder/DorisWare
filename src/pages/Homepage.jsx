@@ -4,8 +4,6 @@ import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import FeaturedProducts from "../components/Featuredproducts";
 import PromoBanner from "../components/Promobanner";
-import About from "../components/About";
-import NewsletterSignup from "../components/Signup";
 import WhyChooseUs from "../components/Whychooseus";
 import Testimonials from "../components/Testimonials";
 
@@ -69,28 +67,11 @@ export default function HomePage() {
       <WhyChooseUs />
       <Testimonials />
 
-      {/* About Section */}
+      {/* About Section
       <section id="about">
         <About
           storyText="At DorisWare, we believe every home deserves quality kitchenware that lasts. From durable cookware to practical utensils and household essentials, each item is carefully selected to make everyday cooking easier, more enjoyable, and affordable."
         />
-      </section>
-
-      {/* Newsletter */}
-      <NewsletterSignup />
-      {/* <section className="border-t border-stone-200">
-        <div className="mx-auto max-w-5xl px-6 py-16">
-          <h2 className="mb-3 font-serif text-2xl font-semibold text-stone-800">
-            Stay in the Loop
-          </h2>
-
-          <p className="mb-6 text-stone-500">
-            Be the first to hear about new arrivals, special offers,
-            and exclusive kitchen tips.
-          </p>
-
-          <NewsletterSignup />
-        </div>
       </section> */}
     </>
   );

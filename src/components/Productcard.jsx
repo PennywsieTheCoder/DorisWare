@@ -1,9 +1,10 @@
 // src/components/ProductCard.jsx
 
-import { ShoppingCart } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Heart, ShoppingCart } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import ProductImageCarousel from "./Productimagecarousel";
 import { useCart } from "../context/Cartcontext";
+import { useAuth } from "../context/Authcontext";
 
 export default function ProductCard({
   id,
@@ -19,7 +20,9 @@ export default function ProductCard({
 {
 
   const { addToCart } = useCart();
+  const { user, isFavorite, toggleFavorite } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const productItem = {
     id,
@@ -50,6 +53,7 @@ export default function ProductCard({
     >
       <div className="relative">
         <ProductImageCarousel images={images} name={name} />
+        <button type="button" onClick={(event) => { event.stopPropagation(); if (!user) { navigate("/login", { state: { from: location.pathname } }); return; } toggleFavorite(productItem); }} aria-label={isFavorite(id) ? `Remove ${name} from favorites` : `Add ${name} to favorites`} className={`absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur transition hover:scale-105 dark:bg-stone-900/90 ${isFavorite(id) ? "text-rose-500" : "text-stone-600 dark:text-stone-300"}`}><Heart size={19} fill={isFavorite(id) ? "currentColor" : "none"} /></button>
       </div>
 
       <div className="p-3 sm:p-4">

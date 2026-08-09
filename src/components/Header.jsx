@@ -1,20 +1,20 @@
 // src/components/Header.jsx
 
 import { useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { CircleX, Leaf, Menu, Search, ShoppingCart, Trash2, User, X, Sun, Moon } from "lucide-react";
 import { useCart } from "../context/Cartcontext";
 import { useTheme } from "../context/Themecontext ";
+import { useAuth } from "../context/Authcontext";
 
 
 export default function Header({ storeName }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const location = useLocation();
   const navigate = useNavigate();
-  const isProductPage = location.pathname.startsWith("/product/");
   const { count, items, removeFromCart, updateQuantity, total, cartAlert, clearCartAlert, isCartOpen, openCart, closeCart } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -36,8 +36,8 @@ export default function Header({ storeName }) {
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex">
             <NavLink to="/" end className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Home</NavLink>
             <NavLink to="/shop" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Shop</NavLink>
-            <Link to="/#about" className="text-gray-600 dark:text-stone-300 hover:text-green-600">About</Link>
-            <Link to="/#contact" className="text-gray-600 dark:text-stone-300 hover:text-green-600">Contact</Link>
+            <NavLink to="/about" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>About</NavLink>
+            <NavLink to="/contact" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Contact</NavLink>
           </nav>
 
           <div className="hidden items-center gap-5 lg:flex">
@@ -51,12 +51,10 @@ export default function Header({ storeName }) {
                 className="ml-2 w-56 bg-transparent outline-none xl:w-72 text-gray-800 dark:text-stone-100 placeholder:text-gray-400 dark:placeholder:text-stone-500"
               />
             </form>
-            {!isProductPage && (
-              <button type="button" onClick={openCart} className="relative" aria-label="View cart">
-                <ShoppingCart className="text-gray-700 dark:text-stone-300" />
-                {count > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs text-white">{count}</span>}
-              </button>
-            )}
+            <button type="button" onClick={openCart} className="relative" aria-label="View cart">
+              <ShoppingCart className="text-gray-700 dark:text-stone-300" />
+              {count > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs text-white">{count}</span>}
+            </button>
 
             {/* Dark mode toggle — desktop */}
             <button
@@ -69,16 +67,17 @@ export default function Header({ storeName }) {
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <button type="button" aria-label="User account"><User className="text-gray-700 dark:text-stone-300" /></button>
+            <Link to={user ? "/profile" : "/login"} aria-label={user ? "View profile" : "Sign in"} className="flex items-center gap-2 text-gray-700 dark:text-stone-300">
+              {user?.avatar ? <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" /> : <User className="shrink-0" />}
+              {user && <span className="max-w-24 truncate text-sm">{user.name}</span>}
+            </Link>
           </div>
 
           <div className="flex shrink-0 items-center gap-3 lg:hidden">
-            {!isProductPage && (
-              <button type="button" onClick={openCart} className="relative" aria-label="View cart">
-                <ShoppingCart className="text-gray-700 dark:text-stone-300" />
-                {count > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs text-white">{count}</span>}
-              </button>
-            )}
+            <button type="button" onClick={openCart} className="relative" aria-label="View cart">
+              <ShoppingCart className="text-gray-700 dark:text-stone-300" />
+              {count > 0 && <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-xs text-white">{count}</span>}
+            </button>
             <button type="button" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
               {isOpen ? <X className="dark:text-stone-100" /> : <Menu className="dark:text-stone-100" />}
             </button>
@@ -90,8 +89,9 @@ export default function Header({ storeName }) {
             <div className="flex flex-col gap-4 p-6 text-gray-600 dark:text-stone-300">
               <Link to="/" onClick={() => setIsOpen(false)}>Home</Link>
               <Link to="/shop" onClick={() => setIsOpen(false)}>Shop</Link>
-              <Link to="/#about" onClick={() => setIsOpen(false)}>About</Link>
-              <Link to="/#contact" onClick={() => setIsOpen(false)}>Contact</Link>
+              <NavLink to="/about" onClick={() => setIsOpen(false)}>About</NavLink>
+              <NavLink to="/contact" onClick={() => setIsOpen(false)}>Contact</NavLink>
+              <Link to={user ? "/profile" : "/login"} onClick={() => setIsOpen(false)}>{user ? "My profile" : "Sign in"}</Link>
 
               {/* Dark mode toggle — mobile */}
               <button
@@ -231,6 +231,7 @@ export default function Header({ storeName }) {
                 <div className="sticky bottom-0 border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-5">
                   <button
                     type="button"
+                    onClick={() => { closeCart(); navigate("/checkout"); }}
                     className="w-full rounded-2xl bg-gradient-to-r from-green-500 to-green-600 py-4 font-semibold text-white shadow-lg transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                   >
                     Checkout Now
