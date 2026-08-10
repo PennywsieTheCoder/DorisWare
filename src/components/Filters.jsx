@@ -70,7 +70,7 @@ export default function Filters({
                 min="0"
                 value={minPrice}
                 onChange={(event) => onMinPriceChange(event.target.value)}
-                placeholder="£0"
+                placeholder="₵0"
                 className="mt-2 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100 dark:placeholder:text-stone-500"
               />
             </label>

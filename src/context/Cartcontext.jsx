@@ -124,7 +124,7 @@ export function CartProvider({ children }) {
   }
 
   const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const formattedTotal = `£${total.toFixed(2)}`;
+  const formattedTotal = `₵${total.toFixed(2)}`;
 
   return (
     <CartContext.Provider value={{ items, count, addToCart, updateQuantity, removeFromCart, clearCart, clearCartAlert, cartAlert, total: formattedTotal, isCartOpen, openCart, closeCart }}>

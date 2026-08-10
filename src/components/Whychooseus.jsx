@@ -34,9 +34,9 @@ export default function WhyChooseUs() {
   ];
 
   return (
-    <section className="bg-stone-50 py-20 dark:bg-stone-900">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="text-center mb-12">
+    <section className="bg-stone-50 py-14 dark:bg-stone-900 sm:py-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mb-8 text-center">
           <p className="font-mono text-xs uppercase tracking-[3px] text-amber-600">
             Why Choose DorisWare
           </p>

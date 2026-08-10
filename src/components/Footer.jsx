@@ -65,7 +65,7 @@ function FooterNewsletter() {
 
 export default function Footer({ storeName }) {
   return (
-    <footer id="contact" className="mt-16 bg-stone-900 px-4 py-10 text-stone-200 sm:px-6">
+    <footer id="contact" className="bg-stone-900 px-4 py-10 text-stone-200 sm:px-6">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-[1.1fr_0.9fr_0.9fr_1.1fr] xl:gap-8">
 
         {/* Column 1: About DorisWare — new */}

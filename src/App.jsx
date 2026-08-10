@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ScrollToTop from "./components/Scrolltotop";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -16,6 +16,9 @@ import SignupPage from "./pages/Signuppage";
 import ProfilePage from "./pages/Profilepage";
 
 export default function App() {
+  const location = useLocation();
+  const showFooter = location.pathname !== "/login";
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100">
       <PageLoader />
@@ -42,7 +45,7 @@ export default function App() {
         </Routes>
       </main>
 
-      <Footer storeName="DorisWare" contactEmail="info@dorisware.com" />
+      {showFooter && <Footer storeName="DorisWare" contactEmail="info@dorisware.com" />}
     </div>
   );
 }
