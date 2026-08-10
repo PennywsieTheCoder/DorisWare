@@ -1,86 +1,97 @@
-// src/components/Hero.jsx
-
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ShieldCheck, Sparkles, Truck } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative h-[560px] overflow-hidden sm:h-[650px]">
+    <section className="relative h-[560px] w-full overflow-hidden sm:h-[620px] lg:h-[660px]">
+      {/* Background Image with Ambient Pan-Zoom Animation */}
+      <div className="absolute inset-0 select-none overflow-hidden">
+        <img
+          src="./images/herobanner.png"
+          alt="DorisWare premium kitchenware"
+          className="h-full w-full object-cover transition-all duration-[10s] scale-105 animate-[zoomPan_20s_infinite_alternate]"
+        />
+        {/* CSS Animation injection inline for the zoomPan effect */}
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes zoomPan {
+            0% { transform: scale(1.02) translate(0px, 0px); }
+            50% { transform: scale(1.07) translate(-10px, -5px); }
+            100% { transform: scale(1.02) translate(0px, 0px); }
+          }
+        `}} />
+      </div>
 
-      {/* Background Image */}
-      <img
-        src="./images/herobanner.png"
-        alt="DorisWare premium kitchenware"
-        className="absolute inset-0 h-full w-full object-cover"
-      />
+      {/* Dark Overlay with Ambient Radial Gradient for premium contrast */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-stone-950/90 via-stone-900/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0)_0%,rgba(0,0,0,0.5)_100%)]" />
 
-      {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-transparent" />
+      {/* Hero Content Wrapper */}
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl text-left">
+          {/* Tag badge */}
+          <div className="inline-flex items-center gap-2 rounded-full bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-md">
+            <Sparkles size={13} className="text-amber-400" />
+            <span>Premium 2026 Collection</span>
+          </div>
 
-
-      {/* Content */}
-      <div className="relative z-1 mx-auto flex h-full max-w-6xl items-center px-4 sm:px-6">
-        <div className="max-w-2xl text-white">
-
-          <span className="text-xs font-medium uppercase tracking-[3px] text-amber-300 sm:text-sm sm:tracking-[4px]">
-            DorisWare Collection
-          </span>
-
-
-          <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-5xl md:text-7xl">
-            Cook Better.
+          <h1 className="mt-5 font-serif text-5xl font-extrabold leading-[1.1] text-white sm:text-6xl md:text-7xl tracking-tight">
+            Crafted for
             <br />
-            Live Better.
+            <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-emerald-300 bg-clip-text text-transparent">
+              Exquisite Cooking.
+            </span>
           </h1>
 
-
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-200 sm:mt-6 sm:text-lg md:text-xl">
-            Premium cookware, kitchen tools, and household essentials
-            carefully selected for every home kitchen.
+          <p className="mt-6 max-w-lg text-base leading-relaxed text-stone-200 sm:text-lg md:text-xl">
+            Elevate your culinary craft with premium pre-seasoned cast iron, 
+            hand-carved olive utensils, and state-of-the-art kitchenware designed for generations.
           </p>
 
-
-          <div className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-4">
-
-            {/* Shop Page Button */}
+          {/* Action buttons */}
+          <div className="mt-8 flex flex-col gap-3.5 sm:flex-row sm:items-center">
             <Link
               to="/shop"
-              className="w-full rounded-lg bg-amber-500 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-amber-600 sm:w-auto"
+              className="w-full rounded-2xl bg-amber-500 px-8 py-4 text-center font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400 hover:shadow-amber-500/30 active:scale-98 sm:w-auto text-sm"
             >
               Shop Collection
             </Link>
-
-
-            {/* About Section Button */}
             <Link
               to="/about"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white px-6 py-3 font-semibold text-white transition-colors hover:bg-white hover:text-stone-900 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-8 py-4 font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-98 sm:w-auto text-sm"
             >
               Our Story
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </Link>
-
           </div>
 
+          {/* Trust points */}
+          <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-6 text-xs text-stone-300">
+            <div className="flex items-center gap-2">
+              <Truck size={15} className="text-amber-400" />
+              <span>Free Delivery in Accra over ₵50</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={15} className="text-emerald-400" />
+              <span>Lifetime Durability Guarantee</span>
+            </div>
+          </div>
         </div>
       </div>
 
-{/* Curved Divider */}
-<div className="absolute -bottom-1 left-0 w-full overflow-hidden leading-none">
-  <svg
-    viewBox="0 0 1440 120"
-    preserveAspectRatio="none"
-    className="block h-auto w-full"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      className="fill-white dark:fill-stone-950 transition-colors duration-200"
-      d="M0,64L80,69.3C160,75,320,85,480,85.3C640,85,800,75,960,69.3C1120,64,1280,64,1360,64L1440,64L1440,130L1360,130C1280,130,1120,130,960,130C800,130,640,130,480,130C320,130,160,130,80,130L0,130Z"
-    />
-  </svg>
-</div>
-      
-
+      {/* Curved Wave Bottom Divider */}
+      <div className="absolute -bottom-1 left-0 w-full overflow-hidden leading-none z-10">
+        <svg
+          viewBox="0 0 1440 120"
+          preserveAspectRatio="none"
+          className="block h-auto w-full"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            className="fill-stone-50 dark:fill-stone-950 transition-colors duration-200"
+            d="M0,64L80,69.3C160,75,320,85,480,85.3C640,85,800,75,960,69.3C1120,64,1280,64,1360,64L1440,64L1440,130L1360,130C1280,130,1120,130,960,130C800,130,640,130,480,130C320,130,160,130,80,130L0,130Z"
+          />
+        </svg>
+      </div>
     </section>
   );
 }

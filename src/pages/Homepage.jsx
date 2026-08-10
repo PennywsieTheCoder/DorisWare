@@ -1,16 +1,15 @@
-// src/pages/HomePage.jsx
-
 import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import FeaturedProducts from "../components/Featuredproducts";
 import PromoBanner from "../components/Promobanner";
 import WhyChooseUs from "../components/Whychooseus";
 import Testimonials from "../components/Testimonials";
-
+import FAQ from "../components/Faq";
+import Newsletter from "../components/Newsletter";
 
 export default function HomePage() {
   return (
-    <>
+    <div className="bg-stone-50/50 dark:bg-stone-950 transition-colors duration-200">
       {/* Hero Section */}
       <Hero />
 
@@ -18,61 +17,22 @@ export default function HomePage() {
       <Categories />
 
       {/* Featured Products */}
-      <FeaturedProducts limit={4} />
+      <FeaturedProducts limit={6} />
 
-      {/* Shop Section */}
-      {/* <section id="shop" className="max-w-5xl mx-auto px-6 py-16">
-        <Filters
-          query={query}
-          onChange={setQuery}
-          category={category}
-          categories={categories}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          onCategoryChange={setCategory}
-          onMinPriceChange={setMinPrice}
-          onMaxPriceChange={setMaxPrice}
-        />
-
-        <h2 className="mb-6 font-serif text-3xl font-semibold text-stone-800">
-          Our Collection
-        </h2>
-
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-            {filtered.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                price={product.price}
-                description={product.description}
-                stripeLink={product.stripeLink}
-                quantity={product.quantity}
-                images={product.images}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-lg border border-stone-200 bg-stone-50 py-12 text-center">
-            <p className="text-stone-500">
-              No products match your search.
-            </p>
-          </div>
-        )}
-      </section> */}
-
-      {/* Promo / Sale Banner */}
+      {/* Promo / Sale Banner with Countdown */}
       <PromoBanner />
+
+      {/* Why Choose Us Perks */}
       <WhyChooseUs />
+
+      {/* Collapsible FAQ Section */}
+      <FAQ />
+
+      {/* Customer Reviews Grid */}
       <Testimonials />
 
-      {/* About Section
-      <section id="about">
-        <About
-          storyText="At DorisWare, we believe every home deserves quality kitchenware that lasts. From durable cookware to practical utensils and household essentials, each item is carefully selected to make everyday cooking easier, more enjoyable, and affordable."
-        />
-      </section> */}
-    </>
+      {/* Newsletter Signup Box */}
+      <Newsletter />
+    </div>
   );
 }

@@ -6,7 +6,7 @@ import { useCart } from "../context/Cartcontext";
 import { useAuth } from "../context/Authcontext";
 import ProductCard from "../components/Productcard";
 
-const money = (value) => `£${value.toFixed(2)}`;
+const money = (value) => `₵${value.toFixed(2)}`;
 
 export default function ProductPage() {
   const { id } = useParams();
