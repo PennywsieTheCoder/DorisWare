@@ -173,7 +173,7 @@ export function Divider() {
 /* ─── AuthShell (shared by Login & Signup) ───────────────────────────────── */
 export function AuthShell({ title, description, children, bottomLink }) {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-stone-50 dark:bg-stone-950">
+    <div className="flex min-h-screen bg-stone-50 dark:bg-stone-950">
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -234,27 +234,31 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
-  const destination = location.state?.from || "/profile";
+  const destination = location.state?.from || "/";
 
   async function submit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      signIn({ email: form.email });
+      const { error: signInError } = await signIn(form);
+      if (signInError) throw signInError;
       navigate(destination, { replace: true });
-    } catch {
-      setError("Incorrect email or password. Please try again.");
+    } catch (signInError) {
+      setError(signInError.message || "Incorrect email or password. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
+    setError("");
     setGoogleLoading(true);
     try {
-      signInWithGoogle();
-      navigate(destination, { replace: true });
+      const { error: googleError } = await signInWithGoogle();
+      if (googleError) throw googleError;
+    } catch (googleError) {
+      setError(googleError.message || "Google sign-in could not start. Please try again.");
     } finally {
       setGoogleLoading(false);
     }

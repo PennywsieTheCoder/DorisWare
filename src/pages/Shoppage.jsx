@@ -6,7 +6,7 @@ import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import ProductCard from "../components/Productcard";
 import Filters from "../components/Filters";
-import { PRODUCTS } from "../data/products";
+import { useProducts } from "../hooks/useProducts";
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,6 +14,7 @@ export default function ShopPage() {
   const category = searchParams.get("category") ?? "All";
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const { products, loading, error } = useProducts();
 
   const updateFilterParam = (name, value) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -30,11 +31,11 @@ export default function ShopPage() {
   const categories = [
     "All",
     ...Array.from(
-      new Set(PRODUCTS.map((product) => product.category))
+      new Set(products.map((product) => product.category))
     ).sort(),
   ];
 
-  const filtered = PRODUCTS.filter((product) => {
+  const filtered = products.filter((product) => {
     const normalizedQuery = query.toLowerCase();
     const searchMatches =
       product.name.toLowerCase().includes(normalizedQuery) ||
@@ -91,7 +92,11 @@ export default function ShopPage() {
           />
         </div>
 
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="rounded-3xl border border-dashed border-stone-300 px-6 py-16 text-center text-stone-500 dark:border-stone-700 dark:text-stone-400">Loading products…</div>
+        ) : error ? (
+          <div className="rounded-3xl border border-dashed border-red-300 px-6 py-16 text-center text-red-600 dark:border-red-900 dark:text-red-400">Products could not load. Please refresh and try again.</div>
+        ) : filtered.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-stone-300 px-6 py-16 text-center dark:border-stone-700">
             <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100">No products found</h3>
             <p className="mt-2 text-stone-500 dark:text-stone-400">Try a different search, category, or price range.</p>

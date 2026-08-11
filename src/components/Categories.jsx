@@ -1,54 +1,24 @@
 import { useNavigate } from "react-router-dom";
-import { PRODUCTS } from "../data/products";
 import { ArrowUpRight } from "lucide-react";
-
-const CATEGORIES = [
-  {
-    name: "Cookware",
-    image: "./images/categories/cookware.png",
-    filter: "Cookware",
-    description: "Pre-seasoned cast iron & steel pans.",
-  },
-  {
-    name: "Utensils",
-    image: "./images/categories/utensils.png",
-    filter: "Utensils",
-    description: "Hand-carved premium wooden spoons.",
-  },
-  {
-    name: "Bakeware",
-    image: "./images/categories/bakeware.png",
-    filter: "Bakeware",
-    description: "Weighted heavy stoneware bowls.",
-  },
-  {
-    name: "Cutlery",
-    image: "./images/categories/cutlery.png",
-    filter: "Cutlery",
-    description: "Full tang carbon-forged knives.",
-  },
-  {
-    name: "Appliances",
-    image: "./images/categories/appliances.png",
-    filter: "Appliances",
-    description: "Fast smart kitchen electricals.",
-  },
-];
+import { useProducts } from "../hooks/useProducts";
+import { useCategories } from "../hooks/useCategories";
 
 export default function Categories({ onCategoryChange }) {
   const navigate = useNavigate();
+  const { products } = useProducts();
+  const { categories, loading } = useCategories();
 
   const handleClick = (category) => {
     if (onCategoryChange) {
-      onCategoryChange(category.filter);
+      onCategoryChange(category.name);
       document.getElementById("shop")?.scrollIntoView({ behavior: "smooth" });
     } else {
-      navigate(`/shop?category=${encodeURIComponent(category.filter)}`);
+      navigate(`/shop?category=${encodeURIComponent(category.name)}`);
     }
   };
 
   const getCount = (filterName) => {
-    return PRODUCTS.filter((p) => p.category === filterName).length;
+    return products.filter((product) => product.category === filterName).length;
   };
 
   return (
@@ -66,11 +36,13 @@ export default function Categories({ onCategoryChange }) {
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
-        {CATEGORIES.map((category) => {
-          const count = getCount(category.filter);
+        {loading ? (
+          <div className="col-span-full py-10 text-center text-sm text-stone-500 dark:text-stone-400">Loading categories…</div>
+        ) : categories.map((category) => {
+          const count = getCount(category.name);
           return (
             <button
-              key={category.name}
+              key={category.id}
               type="button"
               onClick={() => handleClick(category)}
               className="group relative flex h-72 flex-col justify-end overflow-hidden rounded-3xl border border-stone-200 bg-white p-5 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-amber-400 hover:shadow-lg dark:border-stone-800 dark:bg-stone-900"
@@ -78,7 +50,7 @@ export default function Categories({ onCategoryChange }) {
               {/* Category Background Image */}
               <div className="absolute inset-0 select-none overflow-hidden">
                 <img
-                  src={category.image}
+                  src={category.image_url}
                   alt={category.name}
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />

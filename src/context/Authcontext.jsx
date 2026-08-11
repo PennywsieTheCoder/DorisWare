@@ -1,234 +1,299 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { PRODUCTS } from "../data/products";
+import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
-const storageKey = "dorisware-user";
-const withBase = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 
-const DEMO_ORDERS = [
-  {
-    id: "DW-849201",
-    date: "August 8, 2026",
-    total: "₵62.00",
-    status: "In Transit",
-    trackingNumber: "GH-EXP-992384",
-    estimatedDelivery: "Aug 12, 2026",
-    paymentMethod: "Mobile Money (MTN MoMo)",
-    shippingAddress: {
-      label: "Home",
-      recipient: "Doris Customer",
-      street: "12 Airport West Ave",
-      city: "Accra",
-      region: "Greater Accra",
-      country: "Ghana",
-    },
-    items: [
-      { id: "skillet", name: "Cast Iron Skillet", price: "₵38.00", unitPrice: 38, quantity: 1, image: withBase("/images/castironskillet.jpg") },
-      { id: "bowl", name: "Stoneware Mixing Bowl", price: "₵24.00", unitPrice: 24, quantity: 1, image: withBase("/images/castironskillet.jpg") },
-    ],
-  },
-  {
-    id: "DW-710394",
-    date: "July 24, 2026",
-    total: "₵52.00",
-    status: "Delivered",
-    trackingNumber: "GH-EXP-881203",
-    estimatedDelivery: "Jul 26, 2026",
-    paymentMethod: "Debit Card (Visa)",
-    shippingAddress: {
-      label: "Office",
-      recipient: "Doris Customer",
-      street: "Suite 402, Ring Road Central",
-      city: "Accra",
-      region: "Greater Accra",
-      country: "Ghana",
-    },
-    items: [
-      { id: "knife", name: "Chef's Knife, 8-inch", price: "₵52.00", unitPrice: 52, quantity: 1, image: withBase("/images/castironskillet.jpg") },
-    ],
-  },
-];
+const defaultSettings = {
+  notifications: { orderUpdates: true, promotions: true, newProducts: true, restockAlerts: false },
+  currency: "GHS",
+};
 
-const DEMO_ADDRESSES = [
-  {
-    id: "addr-1",
-    label: "Home",
-    recipient: "Doris Customer",
-    phone: "+233 24 123 4567",
-    street: "12 Airport West Ave",
-    city: "Accra",
-    region: "Greater Accra",
-    country: "Ghana",
-    isDefault: true,
-  },
-  {
-    id: "addr-2",
-    label: "Office",
-    recipient: "Doris Customer",
-    phone: "+233 20 987 6543",
-    street: "Suite 402, Ring Road Central",
-    city: "Accra",
-    region: "Greater Accra",
-    country: "Ghana",
-    isDefault: false,
-  },
-];
+function displayOrderStatus(status) {
+  const labels = {
+    pending_payment: "Awaiting payment",
+    paid: "Processing",
+    processing: "Processing",
+    shipped: "In Transit",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+    payment_failed: "Payment failed",
+  };
+  return labels[status] ?? status;
+}
+
+function toProfileOrder(order) {
+  return {
+    id: order.order_number,
+    date: new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
+    total: `₵${Number(order.total).toFixed(2)}`,
+    status: displayOrderStatus(order.status),
+    trackingNumber: order.tracking_number,
+    estimatedDelivery: order.status === "delivered" ? "Delivered" : "To be confirmed",
+    paymentMethod: order.payment_method === "mobile_money" ? "Mobile Money" : "Debit or Credit Card",
+    shippingAddress: order.shipping_address,
+    items: (order.order_items ?? []).map((item) => ({
+      id: item.product_id,
+      name: item.product_name,
+      price: `₵${Number(item.unit_price).toFixed(2)}`,
+      unitPrice: Number(item.unit_price),
+      quantity: item.quantity,
+      image: item.product_image_url,
+    })),
+  };
+}
+
+function toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUser) {
+  const metadata = authUser.user_metadata ?? {};
+
+  return {
+    id: authUser.id,
+    name: profile?.full_name ?? metadata.full_name ?? metadata.name ?? authUser.email?.split("@")[0] ?? "Customer",
+    email: authUser.email ?? "",
+    phone: profile?.phone ?? authUser.phone ?? "",
+    avatar: profile?.avatar_url ?? "",
+    role: profile?.role ?? "customer",
+    favorites: PRODUCTS.filter((product) => favoriteIds.includes(product.id)),
+    orders,
+    addresses,
+    points: previousUser?.points ?? 0,
+    tier: previousUser?.tier ?? "Culinary Enthusiast",
+    settings: previousUser?.settings ?? defaultSettings,
+  };
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return null;
-      const parsed = JSON.parse(stored);
-      return {
-        ...parsed,
-        orders: parsed.orders ?? DEMO_ORDERS,
-        addresses: Array.isArray(parsed.addresses) && parsed.addresses.length > 0
-          ? parsed.addresses.map((a, i) => typeof a === "string" ? { id: `addr-${i}`, label: i === 0 ? "Home" : "Other", recipient: parsed.name || "Customer", phone: parsed.phone || "", street: a, city: "Accra", region: "Greater Accra", country: "Ghana", isDefault: i === 0 } : a)
-          : DEMO_ADDRESSES,
-        points: parsed.points ?? 350,
-        tier: parsed.tier ?? "Culinary Enthusiast",
-      };
-    } catch {
-      return null;
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const fetchOrders = useCallback(async (userId) => {
+    const result = await supabase
+      .from("orders")
+      .select("id, order_number, status, payment_method, total, tracking_number, shipping_address, created_at, order_items(product_id, product_name, product_image_url, unit_price, quantity)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (result.error) console.error("Could not load orders:", result.error.message);
+    return (result.data ?? []).map(toProfileOrder);
+  }, []);
+
+  const loadUser = useCallback(async (authUser) => {
+    if (!authUser) {
+      setUser(null);
+      setAuthLoading(false);
+      return;
     }
-  });
 
-  function saveUser(nextUser) {
-    setUser(nextUser);
-    localStorage.setItem(storageKey, JSON.stringify(nextUser));
+    const [profileResult, addressesResult, favoritesResult, orders] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, phone, avatar_url, role").eq("id", authUser.id).maybeSingle(),
+      supabase.from("addresses").select("id, label, recipient, phone, street, city, region, country, is_default").eq("user_id", authUser.id).order("created_at"),
+      supabase.from("favorites").select("product_id").eq("user_id", authUser.id),
+      fetchOrders(authUser.id),
+    ]);
+
+    if (profileResult.error) console.error("Could not load the user profile:", profileResult.error.message);
+    if (addressesResult.error) console.error("Could not load addresses:", addressesResult.error.message);
+    if (favoritesResult.error) console.error("Could not load favorites:", favoritesResult.error.message);
+
+    let profile = profileResult.data;
+    if (profile?.avatar_url && !profile.avatar_url.startsWith("http")) {
+      const { data } = await supabase.storage.from("avatars").createSignedUrl(profile.avatar_url, 60 * 60);
+      profile = { ...profile, avatar_url: data?.signedUrl ?? "" };
+    }
+
+    const addresses = (addressesResult.data ?? []).map(({ is_default, ...address }) => ({
+      ...address,
+      isDefault: is_default,
+    }));
+    const favoriteIds = (favoritesResult.data ?? []).map((favorite) => favorite.product_id);
+    setUser((previousUser) => toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUser));
+    setAuthLoading(false);
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => loadUser(session?.user));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      loadUser(session?.user);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [loadUser]);
+
+  async function signIn({ email, password }) {
+    return supabase.auth.signInWithPassword({ email, password });
   }
 
-  function signIn({ email, name }) {
-    saveUser({
-      name: name || email.split("@")[0],
+  async function signUp({ name, email, password }) {
+    return supabase.auth.signUp({
       email,
-      phone: "+233 24 123 4567",
-      addresses: DEMO_ADDRESSES,
-      favorites: [],
-      orders: DEMO_ORDERS,
-      points: 350,
-      tier: "Culinary Enthusiast",
-      provider: "email",
-      settings: {
-        notifications: { orderUpdates: true, promotions: true, newProducts: true, restockAlerts: false },
-        currency: "GHS",
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
       },
     });
   }
 
-  function signInWithGoogle() {
-    saveUser({
-      name: "DorisWare Customer",
-      email: "customer@gmail.com",
-      phone: "+233 24 123 4567",
-      addresses: DEMO_ADDRESSES,
-      favorites: [],
-      orders: DEMO_ORDERS,
-      points: 350,
-      tier: "Culinary Enthusiast",
+  async function signInWithGoogle() {
+    return supabase.auth.signInWithOAuth({
       provider: "google",
-      settings: {
-        notifications: { orderUpdates: true, promotions: true, newProducts: true, restockAlerts: false },
-        currency: "GHS",
-      },
+      options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}` },
     });
   }
 
-  function updateProfile(details) {
-    if (!user) return;
-    saveUser({ ...user, ...details });
+  async function updateProfile(details) {
+    if (!user) return { error: new Error("Sign in before updating a profile.") };
+
+    const profileUpdates = {
+      full_name: details.name ?? user.name,
+      phone: details.phone ?? user.phone,
+      avatar_url: details.avatar ?? user.avatar,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("profiles").update(profileUpdates).eq("id", user.id);
+
+    if (!error) {
+      setUser((currentUser) => ({ ...currentUser, ...details, avatar: profileUpdates.avatar_url }));
+    }
+    return { error };
+  }
+
+  async function uploadAvatar(file) {
+    if (!user) return { error: new Error("Sign in before uploading a photo.") };
+
+    const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/avatar.${extension}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) return { error: uploadError };
+
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: path })
+      .eq("id", user.id);
+    if (profileError) return { error: profileError };
+
+    const { data } = await supabase.storage.from("avatars").createSignedUrl(path, 60 * 60);
+    setUser((currentUser) => ({ ...currentUser, avatar: data?.signedUrl ?? "" }));
+    return { error: null };
   }
 
   function updateSettings(settings) {
-    if (!user) return;
-    saveUser({ ...user, settings: { ...(user.settings ?? {}), ...settings } });
+    setUser((currentUser) => currentUser ? {
+      ...currentUser,
+      settings: { ...currentUser.settings, ...settings },
+    } : currentUser);
   }
 
   function addOrder(newOrder) {
-    if (!user) return;
-    const orders = [newOrder, ...(user.orders ?? [])];
-    const points = (user.points ?? 0) + Math.round(parseFloat(newOrder.total) || 50);
-    saveUser({ ...user, orders, points });
+    setUser((currentUser) => currentUser ? { ...currentUser, orders: [newOrder, ...currentUser.orders] } : currentUser);
   }
 
-  function addAddress(newAddress) {
-    if (!user) return;
-    const currentAddresses = user.addresses ?? [];
-    const isFirst = currentAddresses.length === 0;
-    const addressObj = {
-      id: `addr-${Date.now()}`,
-      label: newAddress.label || "Address",
+  async function createOrder(order) {
+    if (!user) return { error: new Error("Sign in before placing an order.") };
+
+    const { items, ...orderDetails } = order;
+    const { data: createdOrder, error: orderError } = await supabase
+      .from("orders")
+      .insert({ ...orderDetails, user_id: user.id })
+      .select("id, order_number")
+      .single();
+
+    if (orderError) return { error: orderError };
+
+    const { error: itemError } = await supabase.from("order_items").insert(
+      items.map((item) => ({ ...item, order_id: createdOrder.id })),
+    );
+
+    if (itemError) return { data: createdOrder, error: itemError };
+
+    const orders = await fetchOrders(user.id);
+    setUser((currentUser) => ({ ...currentUser, orders }));
+    return { data: createdOrder, error: null };
+  }
+
+  async function addAddress(newAddress) {
+    if (!user) return { error: new Error("Sign in before saving an address.") };
+    const isDefault = newAddress.isDefault ?? user.addresses.length === 0;
+
+    if (isDefault) {
+      const { error } = await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id).eq("is_default", true);
+      if (error) return { error };
+    }
+
+    const { data, error } = await supabase.from("addresses").insert({
+      user_id: user.id,
+      label: newAddress.label || "Home",
       recipient: newAddress.recipient || user.name,
-      phone: newAddress.phone || user.phone || "",
-      street: newAddress.street || newAddress.address || "",
+      phone: newAddress.phone || user.phone,
+      street: newAddress.street || newAddress.address,
       city: newAddress.city || "Accra",
       region: newAddress.region || "Greater Accra",
       country: newAddress.country || "Ghana",
-      isDefault: newAddress.isDefault ?? isFirst,
-    };
-    let updated = [...currentAddresses];
-    if (addressObj.isDefault) {
-      updated = updated.map(a => ({ ...a, isDefault: false }));
+      is_default: isDefault,
+    }).select("id, label, recipient, phone, street, city, region, country, is_default").single();
+
+    if (!error) {
+      const { is_default, ...address } = data;
+      setUser((currentUser) => ({
+        ...currentUser,
+        addresses: [...currentUser.addresses.map((item) => ({ ...item, isDefault: isDefault ? false : item.isDefault })), { ...address, isDefault: is_default }],
+      }));
     }
-    updated.push(addressObj);
-    saveUser({ ...user, addresses: updated });
+    return { error };
   }
 
-  function removeAddress(id) {
-    if (!user) return;
-    const updated = (user.addresses ?? []).filter(a => a.id !== id);
-    if (updated.length > 0 && !updated.some(a => a.isDefault)) {
-      updated[0].isDefault = true;
+  async function removeAddress(id) {
+    if (!user) return { error: new Error("Sign in before removing an address.") };
+    const { error } = await supabase.from("addresses").delete().eq("id", id).eq("user_id", user.id);
+    if (!error) {
+      setUser((currentUser) => ({ ...currentUser, addresses: currentUser.addresses.filter((address) => address.id !== id) }));
     }
-    saveUser({ ...user, addresses: updated });
+    return { error };
   }
 
-  function setDefaultAddress(id) {
-    if (!user) return;
-    const updated = (user.addresses ?? []).map(a => ({
-      ...a,
-      isDefault: a.id === id,
-    }));
-    saveUser({ ...user, addresses: updated });
+  async function setDefaultAddress(id) {
+    if (!user) return { error: new Error("Sign in before updating an address.") };
+    const { error: clearError } = await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id).eq("is_default", true);
+    if (clearError) return { error: clearError };
+    const { error } = await supabase.from("addresses").update({ is_default: true }).eq("id", id).eq("user_id", user.id);
+    if (!error) {
+      setUser((currentUser) => ({ ...currentUser, addresses: currentUser.addresses.map((address) => ({ ...address, isDefault: address.id === id })) }));
+    }
+    return { error };
   }
 
-  function toggleFavorite(product) {
+  async function toggleFavorite(product) {
     if (!user) return false;
-    const favorites = user.favorites ?? [];
-    const exists = favorites.some((item) => item.id === product.id);
-    saveUser({
-      ...user,
-      favorites: exists ? favorites.filter((item) => item.id !== product.id) : [...favorites, product],
-    });
-    return true;
+    const exists = user.favorites.some((item) => item.id === product.id);
+    const { error } = exists
+      ? await supabase.from("favorites").delete().eq("user_id", user.id).eq("product_id", product.id)
+      : await supabase.from("favorites").insert({ user_id: user.id, product_id: product.id });
+
+    if (!error) {
+      setUser((currentUser) => ({
+        ...currentUser,
+        favorites: exists
+          ? currentUser.favorites.filter((item) => item.id !== product.id)
+          : [...currentUser.favorites, product],
+      }));
+    }
+    return !error;
   }
 
   function isFavorite(id) {
-    return (user?.favorites ?? []).some((item) => item.id === id);
+    return user?.favorites.some((item) => item.id === id) ?? false;
   }
 
-  function signOut() {
-    setUser(null);
-    localStorage.removeItem(storageKey);
+  async function signOut() {
+    return supabase.auth.signOut();
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        signIn,
-        signInWithGoogle,
-        updateProfile,
-        updateSettings,
-        addOrder,
-        addAddress,
-        removeAddress,
-        setDefaultAddress,
-        toggleFavorite,
-        isFavorite,
-        signOut,
-      }}
-    >
+    <AuthContext.Provider value={{ user, authLoading, signIn, signUp, signInWithGoogle, updateProfile, uploadAvatar, updateSettings, addOrder, createOrder, addAddress, removeAddress, setDefaultAddress, toggleFavorite, isFavorite, signOut }}>
       {children}
     </AuthContext.Provider>
   );

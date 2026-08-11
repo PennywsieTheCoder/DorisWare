@@ -52,7 +52,9 @@ const imageUrl = (path) => {
 export default function ProfilePage() {
   const {
     user,
+    authLoading,
     updateProfile,
+    uploadAvatar,
     updateSettings,
     signOut,
     toggleFavorite,
@@ -92,6 +94,10 @@ export default function ProfilePage() {
     isDefault: false,
   });
 
+  if (authLoading) {
+    return <div className="flex min-h-[50vh] items-center justify-center text-sm text-stone-500">Loading profile…</div>;
+  }
+
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
@@ -109,15 +115,11 @@ export default function ProfilePage() {
     setTimeout(() => setSaved(false), 3000);
   }
 
-  function uploadAvatar(event) {
+  async function handleAvatarUpload(event) {
     const file = event.target.files?.[0];
     if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateProfile({ avatar: reader.result });
-      showToast("Profile photo updated!");
-    };
-    reader.readAsDataURL(file);
+    const { error } = await uploadAvatar(file);
+    showToast(error ? "Profile photo could not be uploaded." : "Profile photo updated!");
   }
 
   function handleReorder(order) {
@@ -208,7 +210,7 @@ export default function ProfilePage() {
                   ref={fileInput}
                   type="file"
                   accept="image/*"
-                  onChange={uploadAvatar}
+                      onChange={handleAvatarUpload}
                   className="hidden"
                 />
               </div>

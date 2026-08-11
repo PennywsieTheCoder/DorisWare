@@ -2,15 +2,17 @@ import { useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductCard from "./Productcard";
-import { PRODUCTS } from "../data/products";
+import { useProducts } from "../hooks/useProducts";
 
 export default function FeaturedProducts({ limit = 6 }) {
   const [selectedTab, setSelectedTab] = useState("All");
+  const { products, loading } = useProducts();
 
   const filterCategories = ["All", "Cookware", "Utensils", "Bakeware", "Cutlery", "Appliances"];
 
   // Filter based on active tab
-  const filteredProducts = PRODUCTS.filter((product) => {
+  const filteredProducts = products.filter((product) => {
+    if (!product.featured) return false;
     if (selectedTab === "All") return true;
     return product.category === selectedTab;
   });
@@ -62,7 +64,9 @@ export default function FeaturedProducts({ limit = 6 }) {
       </div>
 
       {/* Product grid */}
-      {featured.length > 0 ? (
+      {loading ? (
+        <div className="rounded-3xl border border-dashed border-stone-300 p-12 text-center text-sm text-stone-500 dark:border-stone-800 dark:text-stone-400">Loading products…</div>
+      ) : featured.length > 0 ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
           {featured.map((product) => (
             <ProductCard
@@ -70,6 +74,8 @@ export default function FeaturedProducts({ limit = 6 }) {
               id={product.id}
               name={product.name}
               price={product.price}
+              originalPrice={product.originalPrice}
+              discountPercent={product.discountPercent}
               description={product.description}
               stripeLink={product.stripeLink}
               quantity={product.quantity}

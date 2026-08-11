@@ -39,6 +39,7 @@ export default function Header({ storeName }) {
             <NavLink to="/shop" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Shop</NavLink>
             <NavLink to="/about" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>About</NavLink>
             <NavLink to="/contact" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Contact</NavLink>
+            {user?.role === "admin" && <NavLink to="/admin" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Admin</NavLink>}
           </nav>
 
           <div className="hidden items-center gap-5 lg:flex">
@@ -92,6 +93,7 @@ export default function Header({ storeName }) {
               <Link to="/shop" onClick={() => setIsOpen(false)}>Shop</Link>
               <NavLink to="/about" onClick={() => setIsOpen(false)}>About</NavLink>
               <NavLink to="/contact" onClick={() => setIsOpen(false)}>Contact</NavLink>
+              {user?.role === "admin" && <NavLink to="/admin" onClick={() => setIsOpen(false)}>Admin</NavLink>}
               <Link to={user ? "/profile" : "/login"} onClick={() => setIsOpen(false)}>{user ? "My profile" : "Sign in"}</Link>
 
               {/* Dark mode toggle — mobile */}

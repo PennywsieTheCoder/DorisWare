@@ -18,7 +18,7 @@
 //    value. Called inside any component, no matter how deeply
 //    nested inside the Provider.
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 // Step 1: create the context "channel"
 const CartContext = createContext(null);
@@ -106,10 +106,10 @@ export function CartProvider({ children }) {
     setItems((current) => current.filter((item) => item.id !== id));
   }
 
-  function clearCart() {
+  const clearCart = useCallback(() => {
     setItems([]);
     setCartAlert("");
-  }
+  }, []);
 
   function clearCartAlert() {
     setCartAlert("");
