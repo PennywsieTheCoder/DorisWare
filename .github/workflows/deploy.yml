@@ -51,6 +51,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
+      # GitHub Pages does not know React routes such as /profile.
+      # Serving the built app as its 404 page lets React Router render that route on refresh.
+      - name: Add single-page app route fallback
+        run: cp dist/index.html dist/404.html
+
       - name: Upload build output
         uses: actions/upload-pages-artifact@v3
         with:

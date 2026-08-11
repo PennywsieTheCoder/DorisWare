@@ -6,8 +6,10 @@
 // a founder highlight, and the quote pulled out as its own visual
 // moment instead of a small box at the bottom.
 
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Leaf, Truck, ShieldCheck, Heart } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 const VALUES = [
   {
@@ -33,32 +35,60 @@ const VALUES = [
 ];
 
 export default function About() {
+  const [content, setContent] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadContent() {
+      const { data } = await supabase
+        .from("about_content")
+        .select("eyebrow, title, description, image_url")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (isMounted && data) setContent(data);
+    }
+
+    loadContent();
+    return () => { isMounted = false; };
+  }, []);
+
+  const story = content ?? {
+    eyebrow: "Our story",
+    title: "A shop built one kitchen drawer at a time.",
+    description: "DorisWare started as one home cook's personal collection of tools worth keeping — not the ones that looked good in a photo, the ones that actually got used every week.",
+    image_url: null,
+  };
+
   return (
     <div className="bg-white dark:bg-stone-950">
 
       {/* HERO */}
       <section className="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
         <p className="font-mono text-xs uppercase tracking-[3px] text-amber-700 dark:text-amber-500 mb-4">
-          Our Story
+          {story.eyebrow}
         </p>
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-stone-900 dark:text-stone-100 leading-tight mb-6">
-          A shop built one kitchen<br className="hidden sm:block" /> drawer at a time.
+          {story.title}
         </h1>
         <p className="text-lg text-stone-600 dark:text-stone-300 max-w-xl mx-auto">
-          DorisWare started as one home cook's personal collection of tools
-          worth keeping — not the ones that looked good in a photo, the
-          ones that actually got used every week.
+          {story.description}
         </p>
       </section>
 
       {/* FOUNDER HIGHLIGHT */}
       <section className="max-w-5xl mx-auto px-6 pb-20 grid sm:grid-cols-2 gap-10 items-center">
-        {/* Image placeholder — swap for a real photo the same way
-            product images work: drop a file in public/images/ and
-            reference it with the BASE_URL helper for correctness
-            on GitHub Pages. */}
-        <div className="aspect-[4/5] bg-stone-100 dark:bg-stone-800 rounded-2xl flex items-center justify-center text-stone-400 dark:text-stone-500 text-sm font-mono">
-          founder photo
+        <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-stone-100 dark:bg-stone-800">
+          {story.image_url ? (
+            <img src={story.image_url} alt="DorisWare story" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center px-8 text-center text-sm text-stone-400 dark:text-stone-500">
+              A photo from the DorisWare story will appear here.
+            </div>
+          )}
         </div>
 
         <div>
@@ -66,14 +96,12 @@ export default function About() {
             Why this shop exists
           </h2>
           <p className="text-stone-600 dark:text-stone-300 leading-relaxed mb-4">
-            Replace this with your mum's real story — how she started,
-            what she looks for in a good kitchen tool, and why she picked
-            these particular items. A short, honest paragraph works
-            better than a long one.
+            DorisWare is for the tools that become part of a home: reliable
+            cookware, practical details, and pieces chosen for daily use.
           </p>
           <p className="text-stone-600 dark:text-stone-300 leading-relaxed">
-            Every product in this shop earned its place on her own
-            shelves first, before it ever went up for sale.
+            Every product is selected with care for usefulness, durability,
+            and the pleasure of cooking at home.
           </p>
         </div>
       </section>

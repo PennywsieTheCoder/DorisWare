@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Leaf, Menu, Search, ShoppingCart, User, X, Sun, Moon } from "lucide-react";
+import { Menu, Search, ShoppingCart, User, X, Sun, Moon } from "lucide-react";
 import { useCart } from "../context/Cartcontext";
 import { useTheme } from "../context/Themecontext ";
 import { useAuth } from "../context/Authcontext";
@@ -12,6 +12,7 @@ import Cart from "./Cart";
 export default function Header({ storeName }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigate = useNavigate();
   const { count, openCart } = useCart();
   const { theme, toggleTheme } = useTheme();
@@ -25,16 +26,14 @@ export default function Header({ storeName }) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/90 dark:bg-stone-900/90 shadow-sm backdrop-blur">
-        <div className="flex h-20 w-full items-center justify-between gap-3 px-4 sm:px-6">
-          <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-green-900 sm:h-11 sm:w-11">
-              <Leaf className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-            <span className="truncate text-lg font-bold text-gray-800 dark:text-stone-100 sm:text-2xl">{storeName}</span>
+      <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800 dark:bg-stone-900/90">
+        <div className="grid h-16 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6">
+          <Link to="/" className="flex min-w-0 items-center gap-2.5">
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="DorisWare" className="h-10 w-10 shrink-0 rounded-full object-contain" />
+            <span className="truncate font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">{storeName}</span>
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm font-medium lg:flex">
+          <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
             <NavLink to="/" end className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Home</NavLink>
             <NavLink to="/shop" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Shop</NavLink>
             <NavLink to="/about" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>About</NavLink>
@@ -42,17 +41,8 @@ export default function Header({ storeName }) {
             {user?.role === "admin" && <NavLink to="/admin" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Admin</NavLink>}
           </nav>
 
-          <div className="hidden items-center gap-5 lg:flex">
-            <form onSubmit={handleSearch} className="flex items-center rounded-full bg-gray-100 dark:bg-stone-800 px-4 py-2">
-              <Search size={18} className="text-gray-400" />
-              <input
-                aria-label="Search products by name or category"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search by product or category..."
-                className="ml-2 w-56 bg-transparent outline-none xl:w-72 text-gray-800 dark:text-stone-100 placeholder:text-gray-400 dark:placeholder:text-stone-500"
-              />
-            </form>
+          <div className="hidden items-center justify-end gap-1.5 lg:flex">
+            {isSearchOpen ? <form onSubmit={handleSearch} className="flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 dark:border-stone-700 dark:bg-stone-800"><Search size={16} className="text-stone-400" /><input autoFocus aria-label="Search products by name" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products" className="ml-2 w-40 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400 dark:text-stone-100 xl:w-52" /><button type="button" onClick={() => setIsSearchOpen(false)} className="ml-1 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200" aria-label="Close search"><X size={15} /></button></form> : <button type="button" onClick={() => setIsSearchOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800" aria-label="Search products"><Search size={19} /></button>}
             <button type="button" onClick={openCart} className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible" aria-label="View cart">
               <ShoppingCart className="text-gray-700 dark:text-stone-300" />
               {count > 0 && <span className="absolute -right-1 -top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-500 px-1 text-[10px] font-bold leading-none text-white">{count}</span>}
@@ -64,18 +54,17 @@ export default function Header({ storeName }) {
               onClick={toggleTheme}
               aria-label="Toggle dark mode"
               aria-pressed={theme === "dark"}
-              className="text-gray-700 dark:text-stone-300 hover:text-green-600 dark:hover:text-green-400 transition"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800"
             >
               {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <Link to={user ? "/profile" : "/login"} aria-label={user ? "View profile" : "Sign in"} className="flex items-center gap-2 text-gray-700 dark:text-stone-300">
-              {user?.avatar ? <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" /> : <User className="shrink-0" />}
-              {user && <span className="max-w-24 truncate text-sm">{user.name}</span>}
+            <Link to={user ? "/profile" : "/login"} aria-label={user ? "View profile" : "Sign in"} className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800">
+              {user?.avatar ? <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" /> : <User className="shrink-0" size={19} />}
             </Link>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3 lg:hidden">
+          <div className="flex shrink-0 items-center justify-self-end gap-3 lg:hidden">
             <button type="button" onClick={openCart} className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible" aria-label="View cart">
               <ShoppingCart className="text-gray-700 dark:text-stone-300" />
               {count > 0 && <span className="absolute -right-1 -top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-500 px-1 text-[10px] font-bold leading-none text-white">{count}</span>}
@@ -89,6 +78,7 @@ export default function Header({ storeName }) {
         {isOpen && (
           <nav className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 lg:hidden">
             <div className="flex flex-col gap-4 p-6 text-gray-600 dark:text-stone-300">
+              <form onSubmit={(event) => { handleSearch(event); setIsOpen(false); }} className="flex items-center rounded-xl bg-stone-100 px-3 py-2.5 dark:bg-stone-800"><Search size={17} className="text-stone-400" /><input aria-label="Search products by name" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products" className="ml-2 min-w-0 flex-1 bg-transparent text-sm outline-none" /></form>
               <Link to="/" onClick={() => setIsOpen(false)}>Home</Link>
               <Link to="/shop" onClick={() => setIsOpen(false)}>Shop</Link>
               <NavLink to="/about" onClick={() => setIsOpen(false)}>About</NavLink>

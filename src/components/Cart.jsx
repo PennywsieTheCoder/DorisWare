@@ -55,7 +55,7 @@ function EmptyCart({ onClose }) {
       {/* Trust badges */}
       <div className="mt-2 flex flex-wrap justify-center gap-3">
         {[
-          { icon: Truck, label: "Free delivery over ₵200" },
+          { icon: Truck, label: "Delivery fee shown at checkout" },
           { icon: RotateCcw, label: "30-day returns" },
           { icon: Shield, label: "Secure checkout" },
         ].map(({ icon: Icon, label }) => (
@@ -265,8 +265,6 @@ export default function Cart() {
 
   /* Calculated values */
   const subtotal = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
-  const shipping = subtotal >= 200 ? 0 : 5;
-  const grandTotal = subtotal + shipping;
   const savings = items.reduce((s, i) => {
     const original = i.originalPrice ? parseFloat(String(i.originalPrice).replace(/[^0-9.]/g, "")) : 0;
     return original > i.unitPrice ? s + (original - i.unitPrice) * i.quantity : s;
@@ -317,29 +315,6 @@ export default function Cart() {
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        {/* ── Free shipping progress ─────────────────────── */}
-        {items.length > 0 && subtotal < 200 && (
-          <div className="shrink-0 border-b border-stone-100 bg-stone-50 px-5 py-3 dark:border-stone-800/80 dark:bg-stone-900/50">
-            <div className="mb-1.5 flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-medium text-stone-600 dark:text-stone-400">
-                <Truck className="h-3.5 w-3.5" />
-                {subtotal >= 200
-                  ? "You've unlocked free delivery! 🎉"
-                  : `Add ₵${(200 - subtotal).toFixed(2)} for free delivery`}
-              </span>
-              <span className="font-semibold text-green-600 dark:text-green-400">
-                ₵200
-              </span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-400 transition-all duration-500"
-                style={{ width: `${Math.min((subtotal / 200) * 100, 100)}%` }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* ── Stock / promo alert ────────────────────────── */}
         {cartAlert && (
@@ -398,20 +373,12 @@ export default function Cart() {
 
                 <div className="flex justify-between text-sm text-stone-500 dark:text-stone-400">
                   <span>Delivery</span>
-                  <span>
-                    {shipping === 0 ? (
-                      <span className="font-medium text-green-600 dark:text-green-400">
-                        Free 🎉
-                      </span>
-                    ) : (
-                      `₵${shipping.toFixed(2)}`
-                    )}
-                  </span>
+                  <span>Calculated at checkout</span>
                 </div>
 
                 <div className="flex justify-between border-t border-stone-100 pt-2 text-base font-bold text-stone-900 dark:border-stone-800 dark:text-stone-100">
-                  <span>Total</span>
-                  <span>₵{grandTotal.toFixed(2)}</span>
+                  <span>Items subtotal</span>
+                  <span>₵{subtotal.toFixed(2)}</span>
                 </div>
               </div>
 

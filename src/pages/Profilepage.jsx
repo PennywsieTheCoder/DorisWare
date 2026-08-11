@@ -167,7 +167,7 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="min-h-screen bg-stone-50/80 pb-24 dark:bg-stone-950">
+    <div className="min-h-screen bg-[#f6f6f3] pb-20 dark:bg-stone-950">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-stone-900 px-5 py-3.5 text-sm font-medium text-white shadow-2xl transition dark:bg-emerald-600">
@@ -177,16 +177,16 @@ export default function ProfilePage() {
       )}
 
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-950 via-green-900 to-teal-950 px-4 py-12 text-white shadow-lg sm:px-8 sm:py-16">
+      <div className="mx-4 mt-5 overflow-hidden rounded-[2rem] bg-stone-950 px-5 py-8 text-white shadow-xl shadow-stone-900/10 sm:mx-6 sm:px-8 sm:py-10 lg:mx-8">
         <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="absolute -right-20 -bottom-20 h-80 w-80 rounded-full bg-teal-500/10 blur-3xl" />
 
-        <div className="relative mx-auto max-w-6xl">
+        <div className="relative mx-auto max-w-7xl">
           <div className="flex flex-col items-center justify-between gap-8 sm:flex-row sm:items-start">
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
               {/* Profile Avatar */}
               <div className="relative group">
-                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl border-4 border-white/20 bg-white/10 text-3xl font-bold shadow-2xl backdrop-blur-md transition group-hover:border-emerald-400/50">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white/15 bg-white/10 text-3xl font-bold shadow-2xl backdrop-blur-md transition group-hover:border-emerald-400/50">
                   {user.avatar ? (
                     <img
                       src={user.avatar}
@@ -200,7 +200,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => fileInput.current?.click()}
-                  className="absolute -bottom-2 -right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-emerald-900 shadow-xl transition hover:scale-105 hover:bg-emerald-50"
+                  className="absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-stone-950 shadow-xl transition hover:scale-105 hover:bg-emerald-300"
                   title="Update profile picture"
                   aria-label="Update profile picture"
                 >
@@ -239,7 +239,7 @@ export default function ProfilePage() {
             {/* Quick Action Button */}
             <button
               onClick={signOut}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-stone-100 backdrop-blur-md transition hover:bg-white/20 active:scale-95"
             >
               <LogOut size={17} />
               Sign Out
@@ -247,7 +247,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Quick Counter Grid */}
-          <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
               icon={<Package className="text-emerald-400" />}
               label="Orders Placed"
@@ -277,9 +277,9 @@ export default function ProfilePage() {
       </div>
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
+      <main className="mx-auto max-w-7xl px-4 pt-7 sm:px-6 lg:px-8">
         {/* Navigation Tabs */}
-        <div className="no-scrollbar flex overflow-x-auto gap-2 border-b border-stone-200 pb-3 dark:border-stone-800">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-sm dark:border-stone-800 dark:bg-stone-900">
           <TabButton
             id="overview"
             active={activeTab === "overview"}
@@ -937,10 +937,12 @@ export default function ProfilePage() {
                   Tracking Order {selectedOrderForTracking.id}
                 </h3>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
-                  Tracking #: {selectedOrderForTracking.trackingNumber || "GH-EXP-992384"}
+                  Tracking #: {selectedOrderForTracking.trackingNumber || "Not assigned yet"}
                 </p>
               </div>
             </div>
+
+            {selectedOrderForTracking.fulfilmentNote && <p className="mt-5 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:bg-stone-800 dark:text-stone-300">{selectedOrderForTracking.fulfilmentNote}</p>}
 
             {/* Tracking Progress Bar */}
             <div className="mt-8 space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-emerald-500">
@@ -1194,7 +1196,7 @@ function StatCard({ icon, label, value, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-start rounded-2xl border border-white/10 bg-white/10 p-4 text-left backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+      className="flex flex-col items-start rounded-2xl border border-white/10 bg-white/[0.07] p-4 text-left backdrop-blur-md transition hover:-translate-y-0.5 hover:bg-white/[0.13] active:scale-95"
     >
       <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10">
         {icon}
@@ -1209,10 +1211,10 @@ function TabButton({ active, onClick, icon, label, badge }) {
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition shrink-0 ${
+      className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
         active
-          ? "bg-emerald-700 text-white shadow-md dark:bg-emerald-600"
-          : "bg-white text-stone-600 hover:bg-stone-100 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-stone-800"
+          ? "bg-stone-900 text-white shadow-md dark:bg-emerald-600"
+          : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
       }`}
     >
       {icon}

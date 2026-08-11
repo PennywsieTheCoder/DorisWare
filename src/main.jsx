@@ -9,7 +9,7 @@ import './index.css'
 
  ReactDOM.createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter basename="/DorisWare/">
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
     <ThemeProvider>
     <AuthProvider>
     <CartProvider>

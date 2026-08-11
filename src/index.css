@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:wght@500;600;700&display=swap");
+@import "tailwindcss";
+
 @keyframes slideIn {
     from{
         transform:translateX(40px);
@@ -14,12 +17,17 @@
     from { transform: scaleX(0); opacity: 1; }
     to { transform: scaleX(1); opacity: 0; }
 }
-@import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-serif: "Playfair Display", ui-serif, Georgia, serif;
+}
 
 html {
     background: #ffffff;
     color-scheme: light;
+    font-size: 15px;
 }
 
 html.dark {
@@ -32,4 +40,20 @@ body,
 #root {
     min-height: 100%;
     transition: background-color 200ms ease, color 200ms ease;
+}
+
+body {
+    font-family: var(--font-sans);
+}
+
+/* Existing small labels keep their spacing, without switching to a technical monospace face. */
+.font-mono {
+    font-family: var(--font-sans);
+}
+
+/* Keep touch targets comfortable on small screens while making desktop layouts denser. */
+@media (max-width: 640px) {
+    html {
+        font-size: 16px;
+    }
 }

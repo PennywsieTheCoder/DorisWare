@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import Hero from "../components/Hero";
 import Categories from "../components/Categories";
 import ProductCard from "../components/Productcard";
 import Filters from "../components/Filters";
@@ -14,9 +13,11 @@ export default function ShopPage() {
   const category = searchParams.get("category") ?? "All";
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
-  const { products, loading, error } = useProducts();
+  const [visibleCount, setVisibleCount] = useState(12);
+  const { products, loading, error, hasMore } = useProducts({ limit: visibleCount, category, search: query, minPrice, maxPrice });
 
   const updateFilterParam = (name, value) => {
+    setVisibleCount(12);
     const nextParams = new URLSearchParams(searchParams);
 
     if (!value || (name === "category" && value === "All")) {
@@ -28,12 +29,7 @@ export default function ShopPage() {
     setSearchParams(nextParams);
   };
 
-  const categories = [
-    "All",
-    ...Array.from(
-      new Set(products.map((product) => product.category))
-    ).sort(),
-  ];
+  const categories = ["All", "Cookware", "Utensils", "Bakeware", "Cutlery", "Appliances"];
 
   const filtered = products.filter((product) => {
     const normalizedQuery = query.toLowerCase();
@@ -67,8 +63,6 @@ export default function ShopPage() {
 
   return (
     <>
-      <Hero />
-
       <Categories
         onCategoryChange={(value) => updateFilterParam("category", value)}
       />
@@ -87,8 +81,8 @@ export default function ShopPage() {
             minPrice={minPrice}
             maxPrice={maxPrice}
             onCategoryChange={(value) => updateFilterParam("category", value)}
-            onMinPriceChange={setMinPrice}
-            onMaxPriceChange={setMaxPrice}
+            onMinPriceChange={(value) => { setVisibleCount(12); setMinPrice(value); }}
+            onMaxPriceChange={(value) => { setVisibleCount(12); setMaxPrice(value); }}
           />
         </div>
 
@@ -102,14 +96,14 @@ export default function ShopPage() {
             <p className="mt-2 text-stone-500 dark:text-stone-400">Try a different search, category, or price range.</p>
             <button type="button" onClick={() => { setMinPrice(""); setMaxPrice(""); setSearchParams({}); }} className="mt-5 rounded-full bg-stone-900 px-5 py-2 text-sm font-semibold text-white dark:bg-amber-500 dark:text-stone-950">Clear filters</button>
           </div>
-        ) : <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-3 lg:gap-7">
+        ) : <><div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-3 lg:gap-7">
           {filtered.map((product) => (
             <ProductCard
               key={product.id}
               {...product}
             />
           ))}
-        </div>}
+        </div>{hasMore && <div className="mt-10 text-center"><button type="button" onClick={() => setVisibleCount((count) => count + 12)} className="rounded-xl border border-stone-300 bg-white px-5 py-3 text-sm font-semibold text-stone-700 transition hover:border-green-600 hover:text-green-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">Load 12 more products</button></div>}</>}
       </section>
 
       {/* <section className="border-t border-stone-200 dark:border-stone-800">
