@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-function toProduct(row, promotion = null) {
+function toProduct(row, promotion = null, ratingSummary = null) {
   const image = row.image_url?.startsWith("http")
     ? row.image_url
     : row.image_url
@@ -21,17 +21,26 @@ function toProduct(row, promotion = null) {
     discountPercent: qualifiesForDiscount ? discountPercent : 0,
     quantity: row.stock_quantity,
     images: image ? [image] : [],
+    ratingAverage: ratingSummary?.average ?? 0,
+    reviewCount: ratingSummary?.count ?? 0,
   };
 }
 
-export function useProducts() {
+export function useProducts({ limit, category = "All", search = "", minPrice = "", maxPrice = "" } = {}) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     let active = true;
     let expirationTimer;
+
+    // A new filter or page request must enter a loading state immediately.
+    // This prevents empty/stale catalog data from briefly rendering as a
+    // "not found" or "no products" message before Supabase responds.
+    setLoading(true);
+    setError(null);
 
     function schedulePromotionExpiry(endsAt) {
       clearTimeout(expirationTimer);
@@ -41,9 +50,17 @@ export function useProducts() {
     }
 
     async function loadProducts() {
-      const [productsResult, promoResult] = await Promise.all([
-        supabase.from("products").select("id, name, category, description, price, stock_quantity, image_url, featured").order("created_at"),
+      let productsQuery = supabase.from("products").select("id, name, category, description, price, stock_quantity, image_url, featured").order("created_at");
+      if (category !== "All") productsQuery = productsQuery.eq("category", category);
+      if (search.trim()) productsQuery = productsQuery.ilike("name", `%${search.trim()}%`);
+      if (minPrice !== "") productsQuery = productsQuery.gte("price", Number(minPrice));
+      if (maxPrice !== "") productsQuery = productsQuery.lte("price", Number(maxPrice));
+      if (limit) productsQuery = productsQuery.limit(limit + 1);
+
+      const [productsResult, promoResult, reviewsResult] = await Promise.all([
+        productsQuery,
         supabase.from("promo_banners").select("discount_percent, discount_scope, discount_categories, ends_at").eq("is_active", true).order("sort_order").limit(1).maybeSingle(),
+        supabase.from("product_reviews").select("product_id, rating").eq("is_visible", true),
       ]);
       const { data, error: queryError } = productsResult;
       const promo = promoResult.data;
@@ -53,11 +70,22 @@ export function useProducts() {
       schedulePromotionExpiry(promo?.ends_at);
 
       if (!active) return;
-      if (queryError) {
-        setError(queryError);
+      if (queryError || reviewsResult.error) {
+        setError(queryError ?? reviewsResult.error);
         setProducts([]);
+        setHasMore(false);
       } else {
-        setProducts(data.map((product) => toProduct(product, promotion)));
+        const ratings = (reviewsResult.data ?? []).reduce((summary, review) => {
+          const current = summary[review.product_id] ?? { total: 0, count: 0 };
+          summary[review.product_id] = { total: current.total + Number(review.rating), count: current.count + 1 };
+          return summary;
+        }, {});
+        const catalog = data.map((product) => {
+          const summary = ratings[product.id];
+          return toProduct(product, promotion, summary ? { average: summary.total / summary.count, count: summary.count } : null);
+        });
+        setProducts(limit ? catalog.slice(0, limit) : catalog);
+        setHasMore(Boolean(limit) && catalog.length > limit);
         setError(null);
       }
       setLoading(false);
@@ -66,7 +94,7 @@ export function useProducts() {
     loadProducts();
     const channel = supabase.channel(`catalog-promo-prices-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "promo_banners" }, loadProducts).subscribe();
     return () => { active = false; clearTimeout(expirationTimer); supabase.removeChannel(channel); };
-  }, []);
+  }, [limit, category, search, minPrice, maxPrice]);
 
-  return { products, loading, error };
+  return { products, loading, error, hasMore };
 }

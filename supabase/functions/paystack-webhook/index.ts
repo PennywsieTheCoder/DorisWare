@@ -63,11 +63,9 @@ Deno.serve(async (request) => {
     }
 
     const database = createClient(supabaseUrl, serviceKey);
-    const { error } = await database
-      .from("orders")
-      .update({ payment_status: "paid", status: "processing", payment_reference: reference })
-      .eq("payment_reference", reference)
-      .neq("payment_status", "paid");
+    const { error } = await database.rpc("complete_paid_order", {
+      p_payment_reference: reference,
+    });
     if (error) throw error;
 
     return Response.json({ received: true });

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
 import ScrollToTop from "./components/Scrolltotop";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -32,7 +32,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
-          <Route path="/product/:id" element={<ProductPage />} />
+          <Route path="/product/:id" element={<KeyedProductPage />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
@@ -52,4 +52,9 @@ export default function App() {
       {showFooter && <Footer storeName="DorisWare" contactEmail="info@dorisware.com" />}
     </div>
   );
+}
+
+function KeyedProductPage() {
+  const { id } = useParams();
+  return <ProductPage key={id} />;
 }

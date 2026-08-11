@@ -29,7 +29,8 @@ function toProfileOrder(order) {
     total: `₵${Number(order.total).toFixed(2)}`,
     status: displayOrderStatus(order.status),
     trackingNumber: order.tracking_number,
-    estimatedDelivery: order.status === "delivered" ? "Delivered" : "To be confirmed",
+    estimatedDelivery: order.estimated_delivery_at ? new Date(`${order.estimated_delivery_at}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : order.status === "delivered" ? "Delivered" : "To be confirmed",
+    fulfilmentNote: order.fulfilment_note ?? "",
     paymentMethod: order.payment_method === "mobile_money" ? "Mobile Money" : "Debit or Credit Card",
     shippingAddress: order.shipping_address,
     items: (order.order_items ?? []).map((item) => ({
@@ -69,7 +70,7 @@ export function AuthProvider({ children }) {
   const fetchOrders = useCallback(async (userId) => {
     const result = await supabase
       .from("orders")
-      .select("id, order_number, status, payment_method, total, tracking_number, shipping_address, created_at, order_items(product_id, product_name, product_image_url, unit_price, quantity)")
+      .select("id, order_number, status, payment_method, total, tracking_number, estimated_delivery_at, fulfilment_note, shipping_address, created_at, order_items(product_id, product_name, product_image_url, unit_price, quantity)")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
@@ -195,20 +196,19 @@ export function AuthProvider({ children }) {
   async function createOrder(order) {
     if (!user) return { error: new Error("Sign in before placing an order.") };
 
-    const { items, ...orderDetails } = order;
-    const { data: createdOrder, error: orderError } = await supabase
-      .from("orders")
-      .insert({ ...orderDetails, user_id: user.id })
-      .select("id, order_number")
-      .single();
+    const { data, error } = await supabase.rpc("create_checkout_order", {
+      p_items: order.items.map((item) => ({ product_id: item.product_id, quantity: item.quantity })),
+      p_payment_method: order.payment_method,
+      p_contact_email: order.contact_email,
+      p_contact_phone: order.contact_phone,
+      p_shipping_address: order.shipping_address,
+      p_shipping_fee: order.shipping_fee,
+      p_delivery_notes: order.delivery_notes,
+    });
+    if (error) return { error };
 
-    if (orderError) return { error: orderError };
-
-    const { error: itemError } = await supabase.from("order_items").insert(
-      items.map((item) => ({ ...item, order_id: createdOrder.id })),
-    );
-
-    if (itemError) return { data: createdOrder, error: itemError };
+    const createdOrder = data?.[0];
+    if (!createdOrder) return { error: new Error("The order could not be created.") };
 
     const orders = await fetchOrders(user.id);
     setUser((currentUser) => ({ ...currentUser, orders }));
