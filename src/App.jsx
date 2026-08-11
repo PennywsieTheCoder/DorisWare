@@ -14,15 +14,18 @@ import PageLoader from "./components/Pageloader";
 import LoginPage from "./pages/Loginpage";
 import SignupPage from "./pages/Signuppage";
 import ProfilePage from "./pages/Profilepage";
+import AdminPage from "./pages/Adminpage";
 
 export default function App() {
   const location = useLocation();
-  const showFooter = location.pathname !== "/login";
+  const isAuthPage = ["/login", "/signup"].includes(location.pathname);
+  const focusedPage = ["/checkout", "/order-confirmation", "/profile", "/admin"].includes(location.pathname);
+  const showFooter = !isAuthPage && !focusedPage;
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100">
       <PageLoader />
-      <Header storeName="DorisWare" />
+      {!isAuthPage && <Header storeName="DorisWare" />}
 
       <ScrollToTop />
       <main className="flex-1">
@@ -41,6 +44,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -6,26 +6,47 @@ import { useAuth } from "../context/Authcontext";
 import { AuthShell, Divider, inputClass } from "./Loginpage";
 
 export default function SignupPage() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const destination = location.state?.from || "/profile";
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const destination = location.state?.from || "/";
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
+    setError("");
+    setMessage("");
     setLoading(true);
-    signIn({ name: form.name, email: form.email });
-    navigate(destination);
+    try {
+      const { data, error: signUpError } = await signUp(form);
+      if (signUpError) throw signUpError;
+      if (!data.session) {
+        setMessage("Account created. Check your email to confirm your address, then sign in.");
+        return;
+      }
+      navigate(destination, { replace: true });
+    } catch (signUpError) {
+      setError(signUpError.message || "We could not create the account. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleGoogle() {
+  async function handleGoogle() {
+    setError("");
     setGoogleLoading(true);
-    signInWithGoogle();
-    navigate(destination);
+    try {
+      const { error: googleError } = await signInWithGoogle();
+      if (googleError) throw googleError;
+    } catch (googleError) {
+      setError(googleError.message || "Google sign-up could not start. Please try again.");
+      setGoogleLoading(false);
+    }
   }
 
   return (
@@ -37,6 +58,7 @@ export default function SignupPage() {
           Already have an account?{" "}
           <Link
             to="/login"
+            state={{ from: destination }}
             className="font-semibold text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors"
           >
             Sign in →
@@ -152,6 +174,18 @@ export default function SignupPage() {
             </Link>
           </span>
         </label>
+
+        {error && (
+          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+            {error}
+          </p>
+        )}
+
+        {message && (
+          <p role="status" className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
+            {message}
+          </p>
+        )}
 
         {/* Submit */}
         <button

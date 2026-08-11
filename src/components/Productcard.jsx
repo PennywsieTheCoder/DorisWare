@@ -11,6 +11,8 @@ export default function ProductCard({
   name,
   price,
   description,
+  originalPrice = null,
+  discountPercent = 0,
   stripeLink,
   quantity,
   images,       // now an ARRAY, not a single string
@@ -76,7 +78,11 @@ export default function ProductCard({
         </div>
 
         <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-base font-bold text-stone-900 dark:text-stone-100 sm:text-lg">{price}</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-base font-bold text-stone-900 dark:text-stone-100 sm:text-lg">{price}</span>
+            {originalPrice && <span className="text-xs text-stone-400 line-through">₵{Number(originalPrice).toFixed(2)}</span>}
+            {discountPercent > 0 && <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">-{discountPercent}%</span>}
+          </div>
           <button
             type="button"
             onClick={(event) => {

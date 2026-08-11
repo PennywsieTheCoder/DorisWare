@@ -207,7 +207,7 @@ function PromoCode() {
   }
 
   return (
-    <form onSubmit={apply} className="flex gap-2">
+    <form onSubmit={apply} className="flex flex-wrap gap-2">
       <div className="relative flex-1">
         <Tag className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
         <input
@@ -224,6 +224,7 @@ function PromoCode() {
       >
         Apply
       </button>
+      {error && <p role="alert" className="basis-full text-xs text-red-600 dark:text-red-400">{error}</p>}
     </form>
   );
 }
@@ -237,7 +238,6 @@ export default function Cart() {
     count,
     removeFromCart,
     updateQuantity,
-    total,
     cartAlert,
     clearCartAlert,
     isCartOpen,
@@ -246,16 +246,6 @@ export default function Cart() {
 
   const navigate = useNavigate();
   const drawerRef = useRef(null);
-  const [mounted, setMounted] = useState(false);
-
-  /* Animate in */
-  useEffect(() => {
-    if (isCartOpen) {
-      requestAnimationFrame(() => setMounted(true));
-    } else {
-      setMounted(false);
-    }
-  }, [isCartOpen]);
 
   /* Trap focus & close on Escape */
   useEffect(() => {
@@ -291,18 +281,14 @@ export default function Cart() {
     >
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
-          mounted ? "opacity-100" : "opacity-0"
-        }`}
+        className="absolute inset-0 bg-black/40 opacity-100 backdrop-blur-[2px] transition-opacity duration-300"
         onClick={closeCart}
       />
 
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className={`absolute inset-y-0 right-0 flex w-full flex-col bg-white dark:bg-stone-950 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] sm:max-w-[420px] ${
-          mounted ? "translate-x-0" : "translate-x-full"
-        }`}
+        className="absolute inset-y-0 right-0 flex w-full translate-x-0 flex-col bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] dark:bg-stone-950 sm:max-w-[420px]"
       >
         {/* ── Header ─────────────────────────────────────── */}
         <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-5 py-4 dark:border-stone-800/80">
