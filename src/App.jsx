@@ -15,16 +15,20 @@ import LoginPage from "./pages/Loginpage";
 import SignupPage from "./pages/Signuppage";
 import ProfilePage from "./pages/Profilepage";
 import AdminPage from "./pages/Adminpage";
+import ConnectionStatus from "./components/Connectionstatus";
+import StoreAssistant from "./components/StoreAssistant";
 
 export default function App() {
   const location = useLocation();
   const isAuthPage = ["/login", "/signup"].includes(location.pathname);
   const focusedPage = ["/checkout", "/order-confirmation", "/profile", "/admin"].includes(location.pathname);
   const showFooter = !isAuthPage && !focusedPage;
+  const showAssistant = !isAuthPage && !["/checkout", "/order-confirmation", "/admin"].includes(location.pathname);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-stone-900 transition-colors duration-200 dark:bg-stone-950 dark:text-stone-100">
       <PageLoader />
+      <ConnectionStatus />
       {!isAuthPage && <Header storeName="DorisWare" />}
 
       <ScrollToTop />
@@ -50,6 +54,7 @@ export default function App() {
       </main>
 
       {showFooter && <Footer storeName="DorisWare" contactEmail="info@dorisware.com" />}
+      {showAssistant && <StoreAssistant />}
     </div>
   );
 }

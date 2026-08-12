@@ -53,6 +53,16 @@ export function setSessionPersistence(remember) {
   persistForThirtyDays = remember;
 }
 
+export async function withRequestTimeout(request, timeoutMs = 15000) {
+  let timeoutId;
+  const timeout = new Promise((resolve) => {
+    timeoutId = window.setTimeout(() => resolve({ error: { message: "Request timed out" } }), timeoutMs);
+  });
+  const result = await Promise.race([request, timeout]);
+  window.clearTimeout(timeoutId);
+  return result;
+}
+
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
     storage: sessionStorageAdapter,
