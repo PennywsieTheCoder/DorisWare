@@ -353,6 +353,7 @@ function AdminField({ label, type = "text", value, onChange, ...props }) {
   return <label className="text-sm font-medium text-stone-700 dark:text-stone-300">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-green-600 dark:border-stone-700 dark:bg-stone-800" {...props} /></label>;
 }
 
+
 function LoadingRows() {
   return <div className="space-y-3 p-6">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-12 animate-pulse rounded-xl bg-stone-100 dark:bg-stone-800" />)}</div>;
 }
