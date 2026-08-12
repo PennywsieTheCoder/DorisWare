@@ -67,7 +67,7 @@ export default function ProfilePage() {
   const location = useLocation();
   const fileInput = useRef(null);
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => location.state?.tab === "orders" ? "orders" : "overview");
   const [saved, setSaved] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [selectedOrderForTracking, setSelectedOrderForTracking] = useState(null);

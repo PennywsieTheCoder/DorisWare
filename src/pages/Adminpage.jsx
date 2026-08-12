@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
 import { BarChart3, Box, CheckCircle2, ClipboardList, Package, Pencil, Plus, RefreshCw, Settings2, ShoppingBag } from "lucide-react";
 import { useAuth } from "../context/Authcontext";
 import { supabase } from "../lib/supabase";
 
 const orderStatuses = ["processing", "shipped", "delivered", "cancelled"];
+const ProductCategoryContext = createContext([]);
 
 const statusClass = {
   pending_payment: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
@@ -31,10 +32,13 @@ export default function AdminPage() {
   const [editingDeliveryZone, setEditingDeliveryZone] = useState(null);
   const [promoBanner, setPromoBanner] = useState(null);
   const [aboutContent, setAboutContent] = useState(null);
+  const [contactSettings, setContactSettings] = useState(null);
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [supportMessages, setSupportMessages] = useState([]);
+  const [allCustomerMessages, setSupportMessages] = useState([]);
+  const [inboxFilter, setInboxFilter] = useState("all");
   const [subscribers, setSubscribers] = useState([]);
+  const [socialLinks, setSocialLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [savingId, setSavingId] = useState("");
@@ -71,10 +75,14 @@ export default function AdminPage() {
     return { paidOrders, revenue, average: paidOrders.length ? revenue / paidOrders.length : 0, customerArranged: paidOrders.filter((order) => order.delivery_method === "customer_arranged").length, daily, topProducts: Object.entries(productsSold).sort(([, a], [, b]) => b - a).slice(0, 4) };
   }, [orders, reportRange]);
 
+  const supportMessages = allCustomerMessages.filter((message) => inboxFilter === "all" || (message.message_type ?? "support") === inboxFilter);
+  const availableProductCategories = categories.filter((category) => category.is_active).map((category) => category.name);
+
+
   async function loadDashboard() {
     setLoading(true);
     setError("");
-    const [productsResult, categoriesResult, zonesResult, bannerResult, ordersResult, reviewsResult, aboutResult, messagesResult, subscribersResult] = await Promise.all([
+    const [productsResult, categoriesResult, zonesResult, bannerResult, ordersResult, reviewsResult, aboutResult, messagesResult, subscribersResult, contactSettingsResult, socialLinksResult] = await Promise.all([
       supabase.from("products").select("id, name, category, description, price, stock_quantity, image_url, featured, is_active").order("created_at"),
       supabase.from("categories").select("id, name, description, image_url, sort_order, is_active").order("sort_order"),
       supabase.from("delivery_zones").select("id, name, regions, shipping_fee, estimated_delivery, is_active, sort_order").order("sort_order"),
@@ -82,11 +90,13 @@ export default function AdminPage() {
       supabase.from("orders").select("id, order_number, contact_email, contact_phone, shipping_address, total, status, payment_status, payment_method, delivery_method, tracking_number, estimated_delivery_at, fulfilment_note, created_at, order_items(product_name, quantity)").order("created_at", { ascending: false }).limit(250),
       supabase.from("product_reviews").select("id, product_id, user_id, rating, title, body, is_visible, created_at").order("created_at", { ascending: false }),
       supabase.from("about_content").select("id, eyebrow, title, description, image_url, is_active").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
-      supabase.from("support_messages").select("id, first_name, last_name, email, phone, subject, message, status, created_at").order("created_at", { ascending: false }).limit(100),
+      supabase.from("support_messages").select("id, first_name, last_name, email, phone, subject, message, message_type, status, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.from("newsletter_subscribers").select("id, email, status, created_at").order("created_at", { ascending: false }).limit(100),
+      supabase.from("store_contact_settings").select("id, email, phone, whatsapp_number, location_label, directions_url, support_hours").eq("id", true).maybeSingle(),
+      supabase.from("store_social_links").select("platform, url, is_active, sort_order").order("sort_order"),
     ]);
 
-    if (productsResult.error || categoriesResult.error || zonesResult.error || bannerResult.error || ordersResult.error || reviewsResult.error || aboutResult.error || messagesResult.error || subscribersResult.error) {
+    if (productsResult.error || categoriesResult.error || zonesResult.error || bannerResult.error || ordersResult.error || reviewsResult.error || aboutResult.error || messagesResult.error || subscribersResult.error || contactSettingsResult.error || socialLinksResult.error) {
       setError("The dashboard data could not load. Confirm this account has the admin role, then refresh.");
     } else {
       setProducts(productsResult.data);
@@ -98,6 +108,8 @@ export default function AdminPage() {
       setAboutContent(aboutResult.data);
       setSupportMessages(messagesResult.data);
       setSubscribers(subscribersResult.data);
+      setContactSettings(contactSettingsResult.data);
+      setSocialLinks(socialLinksResult.data);
     }
     setLoading(false);
   }
@@ -113,6 +125,7 @@ export default function AdminPage() {
       delivery: ["Delivery zones"],
       promotions: ["Promo banner", "About page"],
       inbox: ["Customer inbox"],
+      contact: ["Contact & location"],
     };
     const managedSections = Object.values(headingsBySection).flat().map((heading) => [...document.querySelectorAll("h2")].find((element) => element.textContent === heading)?.closest("section")).filter(Boolean);
     document.querySelectorAll("section.border-green-200, section.border-amber-200").forEach((section) => managedSections.push(section));
@@ -202,19 +215,21 @@ export default function AdminPage() {
   async function saveCategoryEdit(event) {
     event.preventDefault();
     if (!editingCategory) return;
-    setSavingId(editingCategory.id); setError("");
+    const categoryId = editingCategory.id || editingCategory.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (!categoryId || !editingCategory.description.trim() || (!editingCategory.id && !replacementCategoryImage)) { setError("Enter a name and description, then choose an image for the new category."); return; }
+    setSavingId(categoryId); setError("");
     let imageUrl = editingCategory.image_url;
     if (replacementCategoryImage) {
       const extension = replacementCategoryImage.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${editingCategory.id}/${Date.now()}.${extension}`;
+      const path = `${categoryId}/${Date.now()}.${extension}`;
       const { error: uploadError } = await supabase.storage.from("category-images").upload(path, replacementCategoryImage, { contentType: replacementCategoryImage.type });
       if (uploadError) { setError("Category image upload failed."); setSavingId(""); return; }
       imageUrl = supabase.storage.from("category-images").getPublicUrl(path).data.publicUrl;
     }
     const updates = { name: editingCategory.name.trim(), description: editingCategory.description.trim(), sort_order: Number(editingCategory.sort_order), is_active: editingCategory.is_active, image_url: imageUrl };
-    const { error: updateError } = await supabase.from("categories").update(updates).eq("id", editingCategory.id);
-    if (updateError) setError("Category details could not be updated.");
-    else { setCategories((current) => current.map((category) => category.id === editingCategory.id ? { ...category, ...updates } : category).sort((a, b) => a.sort_order - b.sort_order)); setEditingCategory(null); setReplacementCategoryImage(null); }
+    const result = editingCategory.id ? await supabase.from("categories").update(updates).eq("id", editingCategory.id).select().single() : await supabase.from("categories").insert({ id: categoryId, ...updates }).select().single();
+    if (result.error) setError(editingCategory.id ? "Category details could not be updated." : "Category could not be created. Its name may already be in use.");
+    else { setCategories((current) => (editingCategory.id ? current.map((category) => category.id === editingCategory.id ? result.data : category) : [...current, result.data]).sort((a, b) => a.sort_order - b.sort_order)); setEditingCategory(null); setReplacementCategoryImage(null); }
     setSavingId("");
   }
 
@@ -256,6 +271,16 @@ export default function AdminPage() {
     setSavingId("");
   }
 
+  async function saveContactSettings(event) {
+    event.preventDefault();
+    if (!contactSettings) return;
+    setSavingId("contact-settings"); setError("");
+    const updates = { email: contactSettings.email.trim(), phone: contactSettings.phone.trim(), whatsapp_number: contactSettings.whatsapp_number.replace(/\D/g, ""), location_label: contactSettings.location_label.trim(), directions_url: contactSettings.directions_url.trim(), support_hours: contactSettings.support_hours.trim() };
+    const { data, error: updateError } = await supabase.from("store_contact_settings").update(updates).eq("id", true).select("id, email, phone, whatsapp_number, location_label, directions_url, support_hours").single();
+    if (updateError) setError("Contact settings could not be saved. Check that the directions URL is valid."); else setContactSettings(data);
+    setSavingId("");
+  }
+
   async function saveDeliveryZone(event) {
     event.preventDefault();
     if (!editingDeliveryZone) return;
@@ -277,12 +302,23 @@ export default function AdminPage() {
   if (!user || user.role !== "admin") return <Navigate to="/" replace />;
 
   return (
+    <ProductCategoryContext.Provider value={availableProductCategories}>
     <div className="min-h-screen bg-[#f6f6f3] px-4 py-6 dark:bg-stone-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="relative overflow-hidden rounded-[2rem] bg-stone-950 px-6 py-7 text-white shadow-xl shadow-stone-900/10 sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" /><div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" /><div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-300">DorisWare operations</p><h1 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">The store, at a glance.</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-300">Manage inventory, promotions, delivery, fulfilment, and sales performance from one focused workspace.</p></div><button type="button" onClick={loadDashboard} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-900 shadow-lg transition hover:bg-emerald-50"><RefreshCw size={16} /> Refresh data</button></div><nav className="relative mt-7 flex gap-2 overflow-x-auto pb-1" aria-label="Admin sections">{[["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["delivery", "Delivery"], ["promotions", "Promotions"], ["inbox", `Inbox${supportMessages.filter((message) => message.status === "new").length ? ` (${supportMessages.filter((message) => message.status === "new").length})` : ""}`]].map(([id, label]) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeSection === id ? "bg-white text-stone-950 shadow-sm" : "bg-white/12 text-white hover:bg-white/20"}`}>{label}</button>)}</nav></header>
+        <header className="relative overflow-hidden rounded-[2rem] bg-stone-950 px-6 py-7 text-white shadow-xl shadow-stone-900/10 sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" /><div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" /><div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-300">DorisWare operations</p><h1 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">The store, at a glance.</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-300">Manage inventory, promotions, delivery, fulfilment, and sales performance from one focused workspace.</p></div><button type="button" onClick={loadDashboard} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-900 shadow-lg transition hover:bg-emerald-50"><RefreshCw size={16} /> Refresh data</button></div><nav className="relative mt-7 flex gap-2 overflow-x-auto pb-1" aria-label="Admin sections">{[["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["delivery", "Delivery"], ["promotions", "Promotions"], ["contact", "Contact & location"], ["inbox", `Inbox${supportMessages.filter((message) => message.status === "new").length ? ` (${supportMessages.filter((message) => message.status === "new").length})` : ""}`]].map(([id, label]) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeSection === id ? "bg-white text-stone-950 shadow-sm" : "bg-white/12 text-white hover:bg-white/20"}`}>{label}</button>)}</nav></header>
 
         {error && <p role="alert" className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
 
+        {activeSection === "contact" && <div className="mt-4 rounded-2xl border border-dashed border-sky-300 bg-sky-50/60 px-5 py-4 text-sm text-sky-950 dark:border-sky-800 dark:bg-sky-950/20 dark:text-sky-100"><p className="font-semibold">Adding the Google Maps link</p><ol className="mt-2 list-decimal space-y-1 pl-5 text-sky-900/80 dark:text-sky-100/80"><li>Open Google Maps and find your store.</li><li>Choose <strong>Share</strong> and copy its link.</li><li>Paste it into the directions field, save, then use <strong>Test directions</strong>.</li></ol></div>}
+
+        {contactSettings && <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-sky-700 dark:text-sky-400">Storefront details</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Contact & location</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">These values appear on the public Contact page. Paste a Google Maps directions link so customers can navigate there instantly.</p></div><form onSubmit={saveContactSettings} className="mt-5 grid gap-4 sm:grid-cols-2"><AdminField label="Public email" type="email" value={contactSettings.email} onChange={(value) => setContactSettings({ ...contactSettings, email: value })} required /><AdminField label="Phone number" type="tel" value={contactSettings.phone} onChange={(value) => setContactSettings({ ...contactSettings, phone: value })} required /><AdminField label="WhatsApp number (country code, digits only)" value={contactSettings.whatsapp_number} onChange={(value) => setContactSettings({ ...contactSettings, whatsapp_number: value })} required /><AdminField label="Location label" value={contactSettings.location_label} onChange={(value) => setContactSettings({ ...contactSettings, location_label: value })} required /><AdminField label="Google Maps directions URL" type="url" value={contactSettings.directions_url} onChange={(value) => setContactSettings({ ...contactSettings, directions_url: value })} className="sm:col-span-2" required /><label className="text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2">Support hours<textarea required value={contactSettings.support_hours} onChange={(event) => setContactSettings({ ...contactSettings, support_hours: event.target.value })} rows="4" className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-sky-600 dark:border-stone-700 dark:bg-stone-800" /></label><button type="submit" disabled={savingId === "contact-settings"} className="sm:col-span-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">{savingId === "contact-settings" ? "Saving contact details…" : "Save contact details"}</button></form></section>}
+
+
+        {activeSection === "inbox" && <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-stone-800 dark:bg-stone-900"><span className="px-2 text-xs font-bold uppercase tracking-[.12em] text-stone-400">Show</span>{[["all", "All"], ["support", "Support"], ["suggestion", "Suggestions"]].map(([filter, label]) => <button key={filter} type="button" onClick={() => setInboxFilter(filter)} className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${inboxFilter === filter ? "bg-emerald-700 text-white" : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"}`}>{label}{filter !== "all" ? ` (${allCustomerMessages.filter((message) => (message.message_type ?? "support") === filter).length})` : ` (${allCustomerMessages.length})`}</button>)}</div>}
+
+        {activeSection === "products" && <CategoryManager categories={categories} onCategoriesChange={setCategories} />}
+
+        {activeSection === "contact" && <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-sky-700">Storefront channels</p><h2 className="mt-1 text-xl font-semibold">Social media</h2></div><div className="mt-5 space-y-3">{socialLinks.map((link) => <form key={link.platform} onSubmit={async (event) => { event.preventDefault(); const { error: saveError } = await supabase.from("store_social_links").update({ url: link.url, is_active: link.is_active }).eq("platform", link.platform); if (saveError) setError("Social link could not be saved."); }} className="flex flex-wrap items-center gap-3 rounded-2xl border border-stone-200 p-3 dark:border-stone-700"><p className="w-24 font-semibold capitalize">{link.platform}</p><input type="url" value={link.url} onChange={(event) => setSocialLinks((current) => current.map((item) => item.platform === link.platform ? { ...item, url: event.target.value } : item))} className="min-w-48 flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm dark:border-stone-700 dark:bg-stone-800" required /><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={link.is_active} onChange={(event) => setSocialLinks((current) => current.map((item) => item.platform === link.platform ? { ...item, is_active: event.target.checked } : item))} /> Active</label><button type="submit" className="rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white">Save</button></form>)}</div></section>}
         {activeSection === "overview" && <>
         <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Metric icon={ShoppingBag} label="Paid orders" value={metrics.paidOrders} tone="green" />
@@ -333,6 +369,7 @@ export default function AdminPage() {
         </section>
       </div>
     </div>
+    </ProductCategoryContext.Provider>
   );
 }
 
@@ -349,8 +386,45 @@ function Toggle({ checked, disabled, label, onChange }) {
   return <button type="button" role="switch" aria-checked={checked} aria-label={label} disabled={disabled} onClick={() => onChange(!checked)} className={`relative h-6 w-11 rounded-full transition ${checked ? "bg-green-600" : "bg-stone-300 dark:bg-stone-700"} disabled:opacity-50`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${checked ? "left-5" : "left-0.5"}`} /></button>;
 }
 
-function AdminField({ label, type = "text", value, onChange, ...props }) {
-  return <label className="text-sm font-medium text-stone-700 dark:text-stone-300">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-green-600 dark:border-stone-700 dark:bg-stone-800" {...props} /></label>;
+function AdminField({ label, type = "text", value, onChange, className = "", ...props }) {
+  const availableProductCategories = useContext(ProductCategoryContext);
+  const inputClass = `mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-green-600 dark:border-stone-700 dark:bg-stone-800 ${type === "url" ? "font-mono text-xs" : ""}`;
+  if (label === "Category") {
+    const options = availableProductCategories.includes(value) ? availableProductCategories : [value, ...availableProductCategories];
+    return <label className={`block text-sm font-medium text-stone-700 dark:text-stone-300 ${className}`}>{label}<select value={value} onChange={(event) => onChange(event.target.value)} className={inputClass} required {...props}>{options.map((category) => <option key={category} value={category}>{category}</option>)}</select><span className="mt-1 block text-xs font-normal text-stone-500 dark:text-stone-400">Manage categories separately in Category cards.</span></label>;
+  }
+  return <label className={`block text-sm font-medium text-stone-700 dark:text-stone-300 ${className}`}>{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} className={inputClass} {...props} /></label>;
+}
+
+function CategoryManager({ categories, onCategoriesChange }) {
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [image, setImage] = useState(null);
+  const [form, setForm] = useState({ name: "", description: "", sort_order: "", is_active: true });
+
+  useEffect(() => {
+    const oldSection = [...document.querySelectorAll("h2")].find((heading) => heading.textContent === "Category cards" && !heading.closest("[data-category-manager]"))?.closest("section");
+    if (oldSection) oldSection.hidden = true;
+  }, [categories]);
+
+  async function createCategory(event) {
+    event.preventDefault();
+    const id = form.name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (!id || !form.description.trim() || !image) { setError("Enter a name and description, then choose a category image."); return; }
+    setSaving(true); setError("");
+    const extension = image.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${id}/${Date.now()}.${extension}`;
+    const upload = await supabase.storage.from("category-images").upload(path, image, { contentType: image.type });
+    if (upload.error) { setError("Category image upload failed."); setSaving(false); return; }
+    const imageUrl = supabase.storage.from("category-images").getPublicUrl(path).data.publicUrl;
+    const result = await supabase.from("categories").insert({ id, name: form.name.trim(), description: form.description.trim(), image_url: imageUrl, sort_order: Number(form.sort_order || categories.length + 1), is_active: form.is_active }).select().single();
+    if (result.error) setError("Category could not be created. Its name may already be in use.");
+    else { onCategoriesChange((current) => [...current, result.data].sort((a, b) => a.sort_order - b.sort_order)); setCreating(false); setImage(null); setForm({ name: "", description: "", sort_order: "", is_active: true }); }
+    setSaving(false);
+  }
+
+  return <section data-category-manager className="mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-amber-700 dark:text-amber-400">Store taxonomy</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Category cards</h2><p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Create the categories that appear in product forms, the shop, and the Kitchen Assistant.</p></div><button type="button" onClick={() => setCreating((open) => !open)} className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400"><Plus size={16} /> {creating ? "Close form" : "Add category"}</button></div>{creating && <form onSubmit={createCategory} className="mt-5 grid gap-4 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900/50 dark:bg-amber-950/15 sm:grid-cols-2"><AdminField label="Category name" value={form.name} onChange={(value) => setForm({ ...form, name: value })} required /><AdminField label="Display order" type="number" min="0" value={form.sort_order} onChange={(value) => setForm({ ...form, sort_order: value })} placeholder={String(categories.length + 1)} /><label className="text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2">Description<textarea required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="mt-1.5 min-h-24 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-amber-500 dark:border-stone-700 dark:bg-stone-800" /></label><label className="text-sm font-medium text-stone-700 dark:text-stone-300">Category image<input required type="file" accept="image/*" onChange={(event) => setImage(event.target.files?.[0] ?? null)} className="mt-1.5 block w-full text-sm" /></label><label className="flex items-center gap-2 self-end text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={form.is_active} onChange={(event) => setForm({ ...form, is_active: event.target.checked })} className="h-4 w-4 accent-amber-500" /> Show category immediately</label>{error && <p role="alert" className="sm:col-span-2 text-sm text-red-600 dark:text-red-400">{error}</p>}<button type="submit" disabled={saving} className="sm:col-span-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-stone-950 hover:bg-amber-400 disabled:opacity-60">{saving ? "Creating category…" : "Create category"}</button></form>}<div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{categories.map((category) => <div key={category.id} className="flex items-center gap-3 rounded-2xl border border-stone-200 p-3 dark:border-stone-700"><img src={category.image_url} alt="" className="h-14 w-14 rounded-xl object-cover" /><div className="min-w-0"><p className="truncate font-semibold text-stone-900 dark:text-stone-100">{category.name}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">Position {category.sort_order} · {category.is_active ? "Visible" : "Hidden"}</p></div></div>)}</div></section>;
 }
 
 
