@@ -25,12 +25,12 @@ export default function ProductImageCarousel({ images, name }) {
   }
 
   return (
-    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-3xl bg-white dark:bg-stone-800">
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-3xl bg-stone-100 dark:bg-stone-800">
       <img
         src={images[index]}
         alt={`${name}, photo ${index + 1} of ${images.length}`}
         onError={handleImageError}
-        className="h-full w-full object-contain"
+        className="h-full w-full object-cover"
       />
       <div
         style={{ display: "none" }}
