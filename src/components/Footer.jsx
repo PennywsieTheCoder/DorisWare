@@ -1,5 +1,3 @@
-// src/components/Footer.jsx
-
 import { Link } from "react-router-dom";
 import {
   SiFacebook,
@@ -11,144 +9,45 @@ import {
   SiMastercard,
 } from "@icons-pack/react-simple-icons";
 import { useState } from "react";
+import { supabase } from "../lib/supabase";
+
+const socialLinks = [
+  { label: "Facebook", href: "https://facebook.com", icon: SiFacebook },
+  { label: "Instagram", href: "https://instagram.com", icon: SiInstagram },
+  { label: "X", href: "https://x.com", icon: SiX },
+  { label: "TikTok", href: "https://tiktok.com", icon: SiTiktok },
+  { label: "Pinterest", href: "https://pinterest.com", icon: SiPinterest },
+];
 
 function PaymentBadge({ children }) {
-  return (
-    <div className="w-11 h-8 bg-white rounded flex items-center justify-center px-1.5 dark:bg-stone-100">
-      {children}
-    </div>
-  );
+  return <div className="flex h-8 w-11 items-center justify-center rounded-md bg-white px-1.5">{children}</div>;
 }
 
 function FooterNewsletter() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     if (!email.trim()) return;
-    setSubmitted(true);
+    setSaving(true);
+    setError("");
+    const { error: subscribeError } = await supabase
+      .from("newsletter_subscribers")
+      .insert({ email: email.trim().toLowerCase() });
+    if (subscribeError) {
+      setError(subscribeError.code === "23505" ? "This email is already on the list." : "We could not save your email. Please try again.");
+    } else {
+      setSubmitted(true);
+    }
+    setSaving(false);
   }
 
-  return (
-    <div>
-      <p className="mb-2 font-serif text-lg font-semibold text-white">
-        Stay in the Loop
-      </p>
-      <p className="mb-3 text-sm leading-relaxed text-stone-400">
-        Get new arrivals and special offers in your inbox.
-      </p>
-      {submitted ? (
-        <p className="text-sm font-medium text-green-400">Thanks — you&apos;re on the list.</p>
-      ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-md border border-stone-700 bg-stone-800 px-3 py-2 text-sm text-stone-100 placeholder:text-stone-500 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-            aria-label="Email address"
-          />
-          <button
-            type="submit"
-            className="w-full rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-stone-950 transition-colors hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
-          >
-            Sign up
-          </button>
-        </form>
-      )}
-    </div>
-  );
+  return <div className="max-w-sm"><p className="text-sm font-semibold text-white">A little note from the kitchen</p><p className="mt-2 text-sm leading-6 text-stone-400">New arrivals, practical finds, and occasional offers.</p>{submitted ? <p className="mt-4 text-sm font-medium text-emerald-400">Thanks — you&apos;re on the list.</p> : <><form onSubmit={handleSubmit} className="mt-4 flex gap-2"><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email address" className="min-w-0 flex-1 rounded-xl border border-stone-700 bg-stone-800 px-3 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30" aria-label="Email address" /><button type="submit" disabled={saving} className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:opacity-60">{saving ? "Joining…" : "Join"}</button></form>{error && <p className="mt-3 text-sm text-rose-400">{error}</p>}</>}</div>;
 }
 
 export default function Footer({ storeName }) {
-  return (
-    <footer id="contact" className="bg-stone-900 px-4 py-10 text-stone-200 sm:px-6">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-[1.1fr_0.9fr_0.9fr_1.1fr] xl:gap-8">
-
-        {/* Column 1: About DorisWare — new */}
-        <div>
-          <p className="font-serif text-lg font-semibold text-white mb-2">
-            About {storeName}
-          </p>
-          <p className="text-sm text-stone-400 max-w-xs mb-3">
-            Kitchenware chosen and used at home first, sold second.
-          </p>
-          <nav className="flex flex-col gap-1.5 text-sm">
-            <Link
-              to="/about"
-              className="text-stone-400 hover:text-amber-500 transition-colors"
-            >
-              About Us
-            </Link>
-            <Link
-              to="/contact"
-              className="text-stone-400 hover:text-amber-500 transition-colors"
-            >
-              Contact Us
-            </Link>
-            <Link to="/delivery" className="text-stone-400 hover:text-amber-500 transition-colors">Delivery information</Link>
-            <Link to="/returns" className="text-stone-400 hover:text-amber-500 transition-colors">Returns & refunds</Link>
-          </nav>
-        </div>
-
-        {/* Column 2: socials */}
-        <div>
-          <p className="font-serif text-lg font-semibold text-white mb-2">
-            Stay Connected
-          </p>
-          <div className="flex gap-4">
-            <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook" className="text-stone-400 hover:text-white transition-colors">
-              <SiFacebook size={20} />
-            </a>
-            <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram" className="text-stone-400 hover:text-white transition-colors">
-              <SiInstagram size={20} />
-            </a>
-            <a href="https://x.com" target="_blank" rel="noopener" aria-label="X" className="text-stone-400 hover:text-white transition-colors">
-              <SiX size={20} />
-            </a>
-            <a href="https://tiktok.com" target="_blank" rel="noopener" aria-label="Tiktok" className="text-stone-400 hover:text-white transition-colors">
-              <SiTiktok size={20} />
-            </a>
-            <a href="https://pinterest.com" target="_blank" rel="noopener" aria-label="Pinterest" className="text-stone-400 hover:text-white transition-colors">
-              <SiPinterest size={20} />
-            </a>
-          </div>
-        </div>
-
-        {/* Column 3: payments + legal */}
-        <div className="text-sm text-stone-500 lg:text-right">
-          <p className="font-serif text-lg font-semibold text-white mb-2">
-            We Accept
-          </p>
-          <div className="mb-3 flex items-center gap-2 lg:justify-end">
-            <PaymentBadge>
-              <SiVisa size={22} className="text-blue-500" />
-            </PaymentBadge>
-            <PaymentBadge>
-              <SiMastercard size={22} className="text-stone-900" />
-            </PaymentBadge>
-            <PaymentBadge>
-              <img
-                src={`${import.meta.env.BASE_URL}/mobile-money.png`}
-                alt="Mobile Money"
-                className="max-h-5 max-w-full object-contain"
-              />
-            </PaymentBadge>
-          </div>
-          <p>Payments handled securely by Stripe.</p>
-          <div className="mt-2 flex gap-3 lg:justify-end">
-            <Link to="/privacy" className="hover:text-amber-500">Privacy</Link>
-            <Link to="/terms" className="hover:text-amber-500">Terms</Link>
-          </div>
-          <p>© {new Date().getFullYear()} {storeName}.</p>
-        </div>
-
-        {/* Column 4: newsletter */}
-        <FooterNewsletter />
-      </div>
-    </footer>
-  );
+  return <footer id="contact" className="bg-stone-950 px-4 pt-12 text-stone-200 sm:px-6 sm:pt-14"><div className="mx-auto max-w-6xl"><div className="grid gap-10 md:grid-cols-[1.05fr_.8fr_1.1fr] md:gap-12"><div><Link to="/" className="inline-flex items-center gap-2.5" aria-label={`${storeName} home`}><img src={`${import.meta.env.BASE_URL}logo.png`} alt="" className="h-9 w-9 object-contain" /><span className="font-serif text-xl font-semibold tracking-tight text-white">{storeName}</span></Link><p className="mt-4 max-w-xs text-sm leading-6 text-stone-400">Kitchenware chosen for the tools that earn a permanent place at home.</p><div className="mt-5 flex flex-wrap gap-2">{socialLinks.map(({ label, href, icon: Icon }) => <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-800 text-stone-400 transition hover:border-amber-500 hover:bg-amber-500 hover:text-stone-950"><Icon size={15} /></a>)}</div></div><div><p className="text-sm font-semibold text-white">Help & policies</p><nav className="mt-4 flex flex-col items-start gap-2.5 text-sm"><Link to="/about" className="text-stone-400 transition hover:text-amber-400">About DorisWare</Link><Link to="/contact" className="text-stone-400 transition hover:text-amber-400">Contact</Link><Link to="/delivery" className="text-stone-400 transition hover:text-amber-400">Delivery information</Link><Link to="/returns" className="text-stone-400 transition hover:text-amber-400">Returns & refunds</Link></nav></div><FooterNewsletter /></div><div className="mt-12 flex flex-col gap-5 border-t border-stone-800 py-5 text-xs text-stone-500 sm:flex-row sm:items-center sm:justify-between"><div className="flex flex-wrap items-center gap-3"><span>Secure payments via Paystack</span><div className="flex items-center gap-2"><PaymentBadge><SiVisa size={22} className="text-blue-600" /></PaymentBadge><PaymentBadge><SiMastercard size={22} className="text-stone-900" /></PaymentBadge><PaymentBadge><img src={`${import.meta.env.BASE_URL}mobile-money.png`} alt="Mobile Money" className="max-h-5 max-w-full object-contain" /></PaymentBadge></div></div><div className="flex flex-wrap items-center gap-x-4 gap-y-2"><Link to="/privacy" className="transition hover:text-amber-400">Privacy</Link><Link to="/terms" className="transition hover:text-amber-400">Terms</Link><span>© {new Date().getFullYear()} {storeName}</span></div></div></div></footer>;
 }

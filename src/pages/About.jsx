@@ -67,7 +67,7 @@ export default function About() {
     <div className="bg-white dark:bg-stone-950">
 
       {/* HERO */}
-      <section className="max-w-5xl mx-auto px-6 pt-20 pb-16 text-center">
+      <section className="max-w-5xl mx-auto px-4 pt-20 pb-16 text-center sm:px-6">
         <p className="font-mono text-xs uppercase tracking-[3px] text-amber-700 dark:text-amber-500 mb-4">
           {story.eyebrow}
         </p>
@@ -80,7 +80,7 @@ export default function About() {
       </section>
 
       {/* FOUNDER HIGHLIGHT */}
-      <section className="max-w-5xl mx-auto px-6 pb-20 grid sm:grid-cols-2 gap-10 items-center">
+      <section className="max-w-5xl mx-auto grid gap-10 px-4 pb-20 sm:grid-cols-2 sm:px-6">
         <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-stone-100 dark:bg-stone-800">
           {story.image_url ? (
             <img src={story.image_url} alt="DorisWare story" className="h-full w-full object-cover" />
@@ -108,7 +108,7 @@ export default function About() {
 
       {/* VALUES GRID */}
       <section className="bg-stone-50 dark:bg-stone-900 py-20">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <h2 className="font-serif text-2xl font-semibold text-stone-900 dark:text-stone-100 mb-10 text-center">
             What We Care About
           </h2>
@@ -134,7 +134,7 @@ export default function About() {
       </section>
 
       {/* QUOTE */}
-      <section className="max-w-3xl mx-auto px-6 py-20 text-center">
+      <section className="max-w-3xl mx-auto px-4 py-20 text-center sm:px-6">
         <p className="font-serif italic text-2xl md:text-3xl text-stone-800 dark:text-stone-100 leading-snug">
           "A good knife and a good pan will outlast most of the things you own."
         </p>

@@ -48,16 +48,16 @@ export default function Hero() {
           </p>
 
           {/* Action buttons */}
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-6 flex items-center gap-3">
             <Link
               to="/shop"
-              className="w-full rounded-xl bg-amber-500 px-6 py-3 text-center text-sm font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400 hover:shadow-amber-500/30 active:scale-98 sm:w-auto"
+              className="flex-1 whitespace-nowrap rounded-xl bg-amber-500 px-4 py-3 text-center text-sm font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400 hover:shadow-amber-500/30 active:scale-98 sm:flex-none sm:px-6"
             >
               Shop Collection
             </Link>
             <Link
               to="/about"
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-98 sm:w-auto"
+              className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-98 sm:flex-none sm:px-6"
             >
               Our Story
               <ChevronRight size={16} />

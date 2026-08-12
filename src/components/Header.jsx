@@ -27,10 +27,10 @@ export default function Header({ storeName }) {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800 dark:bg-stone-900/90">
-        <div className="grid h-16 w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 sm:px-6">
+        <div className="grid h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="DorisWare" className="h-10 w-10 shrink-0 rounded-full object-contain" />
-            <span className="truncate font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100">{storeName}</span>
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="DorisWare" className="h-9 w-9 shrink-0 rounded-full object-contain sm:h-10 sm:w-10" />
+            <span className="hidden truncate font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:inline">{storeName}</span>
           </Link>
 
           <nav className="hidden items-center gap-6 text-sm font-medium lg:flex">
@@ -40,6 +40,11 @@ export default function Header({ storeName }) {
             <NavLink to="/contact" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Contact</NavLink>
             {user?.role === "admin" && <NavLink to="/admin" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Admin</NavLink>}
           </nav>
+
+          <form onSubmit={handleSearch} className="flex min-w-0 items-center rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2 dark:border-stone-700 dark:bg-stone-800 lg:hidden">
+            <Search size={16} className="shrink-0 text-stone-400" />
+            <input aria-label="Search products by name" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products" className="ml-1.5 min-w-0 flex-1 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400 dark:text-stone-100" />
+          </form>
 
           <div className="hidden items-center justify-end gap-1.5 lg:flex">
             {isSearchOpen ? <form onSubmit={handleSearch} className="flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 dark:border-stone-700 dark:bg-stone-800"><Search size={16} className="text-stone-400" /><input autoFocus aria-label="Search products by name" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products" className="ml-2 w-40 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400 dark:text-stone-100 xl:w-52" /><button type="button" onClick={() => setIsSearchOpen(false)} className="ml-1 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200" aria-label="Close search"><X size={15} /></button></form> : <button type="button" onClick={() => setIsSearchOpen(true)} className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800" aria-label="Search products"><Search size={19} /></button>}
@@ -64,12 +69,15 @@ export default function Header({ storeName }) {
             </Link>
           </div>
 
-          <div className="flex shrink-0 items-center justify-self-end gap-3 lg:hidden">
-            <button type="button" onClick={openCart} className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible" aria-label="View cart">
+          <div className="flex shrink-0 items-center justify-self-end gap-0 lg:hidden">
+            <Link to={user ? "/profile" : "/login"} aria-label={user ? "View profile" : "Sign in"} className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800">
+              {user?.avatar ? <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" /> : <User className="shrink-0" size={19} />}
+            </Link>
+            <button type="button" onClick={openCart} className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-visible" aria-label="View cart">
               <ShoppingCart className="text-gray-700 dark:text-stone-300" />
               {count > 0 && <span className="absolute -right-1 -top-1 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-500 px-1 text-[10px] font-bold leading-none text-white">{count}</span>}
             </button>
-            <button type="button" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu">
+            <button type="button" onClick={() => setIsOpen(!isOpen)} aria-label="Toggle menu" aria-expanded={isOpen} className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800">
               {isOpen ? <X className="dark:text-stone-100" /> : <Menu className="dark:text-stone-100" />}
             </button>
           </div>
@@ -78,14 +86,11 @@ export default function Header({ storeName }) {
         {isOpen && (
           <nav className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 lg:hidden">
             <div className="flex flex-col gap-4 p-6 text-gray-600 dark:text-stone-300">
-              <form onSubmit={(event) => { handleSearch(event); setIsOpen(false); }} className="flex items-center rounded-xl bg-stone-100 px-3 py-2.5 dark:bg-stone-800"><Search size={17} className="text-stone-400" /><input aria-label="Search products by name" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products" className="ml-2 min-w-0 flex-1 bg-transparent text-sm outline-none" /></form>
               <Link to="/" onClick={() => setIsOpen(false)}>Home</Link>
               <Link to="/shop" onClick={() => setIsOpen(false)}>Shop</Link>
               <NavLink to="/about" onClick={() => setIsOpen(false)}>About</NavLink>
               <NavLink to="/contact" onClick={() => setIsOpen(false)}>Contact</NavLink>
               {user?.role === "admin" && <NavLink to="/admin" onClick={() => setIsOpen(false)}>Admin</NavLink>}
-              <Link to={user ? "/profile" : "/login"} onClick={() => setIsOpen(false)}>{user ? "My profile" : "Sign in"}</Link>
-
               {/* Dark mode toggle — mobile */}
               <button
               type="button"

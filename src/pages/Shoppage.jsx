@@ -69,7 +69,7 @@ export default function ShopPage() {
 
       <section
         id="shop"
-        className="max-w-6xl mx-auto px-6 py-16"
+        className="max-w-6xl mx-auto px-4 py-16 sm:px-6"
       >
         <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="font-serif text-2xl font-semibold text-stone-800 dark:text-stone-100 sm:text-3xl">

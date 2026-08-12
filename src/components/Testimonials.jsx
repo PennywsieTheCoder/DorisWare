@@ -48,11 +48,11 @@ export default function Testimonials() {
       </div>
 
       {/* Review Cards Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 md:grid-cols-3">
         {testimonials.map((testimonial, i) => (
           <div
             key={i}
-            className="flex flex-col justify-between rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
+            className="flex w-[min(19rem,calc(100vw-2.5rem))] shrink-0 snap-center flex-col justify-between rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-stone-800 dark:bg-stone-900 sm:w-auto"
           >
             <div>
               {/* Star Rating & Verified tag */}
