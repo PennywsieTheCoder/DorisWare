@@ -87,7 +87,9 @@ export default function ShopPage() {
         </div>
 
         {loading ? (
-          <div className="rounded-3xl border border-dashed border-stone-300 px-6 py-16 text-center text-stone-500 dark:border-stone-700 dark:text-stone-400">Loading products…</div>
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-3 lg:gap-7" aria-label="Loading products">
+            {Array.from({ length: 6 }, (_, index) => <ProductCardSkeleton key={index} />)}
+          </div>
         ) : error ? (
           <div className="rounded-3xl border border-dashed border-red-300 px-6 py-16 text-center text-red-600 dark:border-red-900 dark:text-red-400">Products could not load. Please refresh and try again.</div>
         ) : filtered.length === 0 ? (
@@ -122,4 +124,8 @@ export default function ShopPage() {
       </section> */}
     </>
   );
+}
+
+function ProductCardSkeleton() {
+  return <div className="overflow-hidden rounded-3xl bg-white shadow-md dark:bg-stone-900"><div className="aspect-[4/3] animate-pulse bg-stone-200 dark:bg-stone-800" /><div className="space-y-3 p-3"><div className="h-4 w-3/4 animate-pulse rounded bg-stone-200 dark:bg-stone-800" /><div className="h-3 w-1/3 animate-pulse rounded bg-stone-100 dark:bg-stone-800/70" /><div className="h-8 animate-pulse rounded bg-stone-100 dark:bg-stone-800/70" /><div className="flex items-center justify-between pt-1"><div className="h-5 w-14 animate-pulse rounded bg-stone-200 dark:bg-stone-800" /><div className="h-8 w-24 animate-pulse rounded-full bg-stone-100 dark:bg-stone-800/70" /></div></div></div>;
 }

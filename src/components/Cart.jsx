@@ -95,7 +95,7 @@ function CartItem({ item, onRemove, onUpdate }) {
           <img
             src={item.images[0]}
             alt={item.name}
-            className="h-20 w-20 rounded-xl object-contain p-2"
+            className="h-20 w-20 rounded-xl object-cover"
           />
         ) : (
           <div className="flex h-20 w-20 items-center justify-center text-2xl">

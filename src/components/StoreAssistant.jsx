@@ -108,7 +108,7 @@ export default function StoreAssistant() {
   return (
     <div className="fixed right-4 z-[70] transition-[bottom] duration-300 sm:right-6" style={{ bottom: footerOffset }}>
       {isOpen && (
-        <section ref={panelRef} id="store-assistant" role="dialog" aria-modal="true" aria-label="DorisWare Kitchen Assistant" style={{ height: `min(620px, calc(100vh - ${footerOffset + 84}px))` }} className="absolute bottom-16 right-0 flex w-[calc(100vw-2rem)] max-w-[390px] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 dark:border-stone-700 dark:bg-stone-900">
+        <section ref={panelRef} id="store-assistant" role="dialog" aria-modal="true" aria-label="DorisWare Kitchen Assistant" style={{ height: `min(620px, calc(100vh - ${footerOffset + 84}px))` }} className="absolute bottom-16 right-0 flex max-h-[55svh] w-[calc(100vw-3rem)] max-w-[22rem] flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20 sm:max-h-[620px] sm:max-w-[390px] dark:border-stone-700 dark:bg-stone-900">
           <header className="flex items-center justify-between bg-gradient-to-br from-stone-900 via-stone-800 to-emerald-950 px-5 py-4 text-white">
             <div className="flex items-center gap-3">
               <div className="relative flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-amber-300"><CookingPot size={20} strokeWidth={1.8} /><span className="absolute -top-1 h-2 w-px rounded-full bg-amber-200/80" /><span className="absolute -top-0.5 left-4 h-1.5 w-px rounded-full bg-amber-200/60" /></div>

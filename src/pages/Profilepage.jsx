@@ -556,7 +556,7 @@ export default function ProfilePage() {
                               <img
                                 src={imageUrl(item.image)}
                                 alt={item.name}
-                                className="h-full w-full object-contain p-2"
+                                className="h-full w-full object-cover"
                               />
                             </div>
                             <div className="min-w-0 flex-1">
@@ -665,7 +665,7 @@ export default function ProfilePage() {
                       <img
                         src={imageUrl(item.images?.[0])}
                         alt={item.name}
-                        className="h-full w-full object-contain p-3 transition duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       />
                     </div>
 
