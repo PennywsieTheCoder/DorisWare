@@ -230,6 +230,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
+  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -241,7 +242,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { error: signInError } = await signIn(form);
+      const { error: signInError } = await signIn({ ...form, remember });
       if (signInError) throw signInError;
       navigate(destination, { replace: true });
     } catch (signInError) {
@@ -371,6 +372,8 @@ export default function LoginPage() {
           <input
             type="checkbox"
             id="remember-me"
+            checked={remember}
+            onChange={(event) => setRemember(event.target.checked)}
             className="h-4 w-4 rounded border-stone-300 text-green-600 accent-green-600 dark:border-stone-600"
           />
           <span className="text-sm text-stone-600 dark:text-stone-400">

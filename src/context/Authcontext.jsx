@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { PRODUCTS } from "../data/products";
-import { supabase } from "../lib/supabase";
+import { setSessionPersistence, supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 
@@ -28,9 +28,11 @@ function toProfileOrder(order) {
     date: new Date(order.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
     total: `₵${Number(order.total).toFixed(2)}`,
     status: displayOrderStatus(order.status),
+    rawStatus: order.status,
     trackingNumber: order.tracking_number,
     estimatedDelivery: order.estimated_delivery_at ? new Date(`${order.estimated_delivery_at}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : order.status === "delivered" ? "Delivered" : "To be confirmed",
     fulfilmentNote: order.fulfilment_note ?? "",
+    deliveryMethod: order.delivery_method ?? "dorisware_delivery",
     paymentMethod: order.payment_method === "mobile_money" ? "Mobile Money" : "Debit or Credit Card",
     shippingAddress: order.shipping_address,
     items: (order.order_items ?? []).map((item) => ({
@@ -53,6 +55,7 @@ function toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUs
     email: authUser.email ?? "",
     phone: profile?.phone ?? authUser.phone ?? "",
     avatar: profile?.avatar_url ?? "",
+    avatarPath: profile?.avatar_url ?? "",
     role: profile?.role ?? "customer",
     favorites: PRODUCTS.filter((product) => favoriteIds.includes(product.id)),
     orders,
@@ -66,6 +69,7 @@ function toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUs
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [avatarPath, setAvatarPath] = useState("");
 
   const fetchOrders = useCallback(async (userId) => {
     const result = await supabase
@@ -81,6 +85,7 @@ export function AuthProvider({ children }) {
   const loadUser = useCallback(async (authUser) => {
     if (!authUser) {
       setUser(null);
+      setAvatarPath("");
       setAuthLoading(false);
       return;
     }
@@ -96,18 +101,30 @@ export function AuthProvider({ children }) {
     if (addressesResult.error) console.error("Could not load addresses:", addressesResult.error.message);
     if (favoritesResult.error) console.error("Could not load favorites:", favoritesResult.error.message);
 
-    let profile = profileResult.data;
+    const signedAvatarMarker = "/storage/v1/object/sign/avatars/";
+    const savedAvatarUrl = profileResult.data?.avatar_url ?? "";
+    const storedAvatarPath = savedAvatarUrl.includes(signedAvatarMarker)
+      ? decodeURIComponent(savedAvatarUrl.split(signedAvatarMarker)[1].split("?")[0])
+      : savedAvatarUrl;
+    let profile = profileResult.data ? { ...profileResult.data, avatar_url: storedAvatarPath } : null;
+    if (storedAvatarPath !== savedAvatarUrl) {
+      supabase.from("profiles").update({ avatar_url: storedAvatarPath }).eq("id", authUser.id).then(() => {});
+    }
     if (profile?.avatar_url && !profile.avatar_url.startsWith("http")) {
       const { data } = await supabase.storage.from("avatars").createSignedUrl(profile.avatar_url, 60 * 60);
       profile = { ...profile, avatar_url: data?.signedUrl ?? "" };
     }
+    setAvatarPath(storedAvatarPath);
 
     const addresses = (addressesResult.data ?? []).map(({ is_default, ...address }) => ({
       ...address,
       isDefault: is_default,
     }));
     const favoriteIds = (favoritesResult.data ?? []).map((favorite) => favorite.product_id);
-    setUser((previousUser) => toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUser));
+    setUser((previousUser) => ({
+      ...toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUser),
+      avatarPath: storedAvatarPath,
+    }));
     setAuthLoading(false);
   }, [fetchOrders]);
 
@@ -121,8 +138,25 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe();
   }, [loadUser]);
 
-  async function signIn({ email, password }) {
-    return supabase.auth.signInWithPassword({ email, password });
+  useEffect(() => {
+    if (!avatarPath || avatarPath.startsWith("http")) return undefined;
+
+    const refreshAvatarUrl = async () => {
+      const { data } = await supabase.storage.from("avatars").createSignedUrl(avatarPath, 60 * 60);
+      if (data?.signedUrl) {
+        setUser((currentUser) => currentUser ? { ...currentUser, avatar: data.signedUrl, avatarPath } : currentUser);
+      }
+    };
+
+    const timer = window.setInterval(refreshAvatarUrl, 45 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [avatarPath]);
+
+  async function signIn({ email, password, remember = true }) {
+    setSessionPersistence(remember);
+    const result = await supabase.auth.signInWithPassword({ email, password });
+    if (!result.error && result.data.user) await loadUser(result.data.user);
+    return result;
   }
 
   async function signUp({ name, email, password }) {
@@ -149,13 +183,17 @@ export function AuthProvider({ children }) {
     const profileUpdates = {
       full_name: details.name ?? user.name,
       phone: details.phone ?? user.phone,
-      avatar_url: details.avatar ?? user.avatar,
       updated_at: new Date().toISOString(),
     };
+    if (details.avatar !== undefined) profileUpdates.avatar_url = details.avatar;
     const { error } = await supabase.from("profiles").update(profileUpdates).eq("id", user.id);
 
     if (!error) {
-      setUser((currentUser) => ({ ...currentUser, ...details, avatar: profileUpdates.avatar_url }));
+      setUser((currentUser) => currentUser ? {
+        ...currentUser,
+        ...details,
+        ...(details.avatar !== undefined ? { avatar: details.avatar, avatarPath: details.avatar } : {}),
+      } : currentUser);
     }
     return { error };
   }
@@ -178,7 +216,8 @@ export function AuthProvider({ children }) {
     if (profileError) return { error: profileError };
 
     const { data } = await supabase.storage.from("avatars").createSignedUrl(path, 60 * 60);
-    setUser((currentUser) => ({ ...currentUser, avatar: data?.signedUrl ?? "" }));
+    setAvatarPath(path);
+    setUser((currentUser) => currentUser ? { ...currentUser, avatar: data?.signedUrl ?? "", avatarPath: path } : currentUser);
     return { error: null };
   }
 

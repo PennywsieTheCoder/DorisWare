@@ -53,7 +53,7 @@ export default function OrderConfirmationPage() {
         <p className="mt-3 text-stone-600 dark:text-stone-300">{appearance.message}</p>
         {orderNumber && <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">Order reference: <strong>{orderNumber}</strong>.</p>}
         {loading && <p className="mt-3 text-xs text-stone-400">Checking payment status…</p>}
-        <div className="mt-8 flex justify-center gap-3">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link to="/profile" className="rounded-full border border-stone-200 px-5 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800">View orders</Link>
           <Link to="/shop" className="rounded-full bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700">Continue shopping</Link>
         </div>

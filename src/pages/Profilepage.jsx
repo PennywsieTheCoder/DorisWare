@@ -1,5 +1,5 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Heart,
@@ -170,7 +170,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#f6f6f3] pb-20 dark:bg-stone-950">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-stone-900 px-5 py-3.5 text-sm font-medium text-white shadow-2xl transition dark:bg-emerald-600">
+        <div className="fixed inset-x-4 bottom-4 z-50 flex items-center gap-3 rounded-2xl bg-stone-900 px-5 py-3.5 text-sm font-medium text-white shadow-2xl transition dark:bg-emerald-600 sm:inset-x-auto sm:bottom-6 sm:right-6">
           <CheckCircle2 size={18} className="text-emerald-400 dark:text-white" />
           <span>{toastMessage}</span>
         </div>
@@ -917,67 +917,7 @@ export default function ProfilePage() {
         )}
       </main>
 
-      {/* Modal: Order Package Tracking */}
-      {selectedOrderForTracking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-stone-900 sm:p-8">
-            <button
-              onClick={() => setSelectedOrderForTracking(null)}
-              className="absolute right-5 top-5 rounded-full p-2 text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <span className="rounded-2xl bg-emerald-100 p-3 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
-                <Truck size={24} />
-              </span>
-              <div>
-                <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                  Tracking Order {selectedOrderForTracking.id}
-                </h3>
-                <p className="text-xs text-stone-500 dark:text-stone-400">
-                  Tracking #: {selectedOrderForTracking.trackingNumber || "Not assigned yet"}
-                </p>
-              </div>
-            </div>
-
-            {selectedOrderForTracking.fulfilmentNote && <p className="mt-5 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:bg-stone-800 dark:text-stone-300">{selectedOrderForTracking.fulfilmentNote}</p>}
-
-            {/* Tracking Progress Bar */}
-            <div className="mt-8 space-y-6 relative before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-emerald-500">
-              <TrackingStep
-                title="Order Placed & Confirmed"
-                time={selectedOrderForTracking.date}
-                done={true}
-              />
-              <TrackingStep
-                title="Packed at DorisWare Hub (Accra)"
-                time="Order Picked & Inspected"
-                done={true}
-              />
-              <TrackingStep
-                title="In Transit with Express Courier"
-                time={selectedOrderForTracking.status === "Delivered" ? "Completed" : "On the road to destination"}
-                done={true}
-                current={selectedOrderForTracking.status !== "Delivered"}
-              />
-              <TrackingStep
-                title="Out for Final Delivery"
-                time={selectedOrderForTracking.estimatedDelivery || "Arriving Soon"}
-                done={selectedOrderForTracking.status === "Delivered"}
-              />
-            </div>
-
-            <button
-              onClick={() => setSelectedOrderForTracking(null)}
-              className="mt-8 w-full rounded-2xl bg-stone-900 py-3 text-sm font-semibold text-white dark:bg-emerald-600"
-            >
-              Close Tracking Window
-            </button>
-          </div>
-        </div>
-      )}
+      {selectedOrderForTracking && <OrderTrackingModal order={selectedOrderForTracking} onClose={() => setSelectedOrderForTracking(null)} />}
 
       {/* Modal: Printable Invoice / Receipt */}
       {selectedOrderForInvoice && (
@@ -1262,9 +1202,49 @@ function StatusBadge({ status }) {
   );
 }
 
-function TrackingStep({ title, time, done, current }) {
+function OrderTrackingModal({ order, onClose }) {
+  const closeButton = useRef(null);
+  const isCustomerArranged = order.deliveryMethod === "customer_arranged";
+  const cancelled = order.rawStatus === "cancelled";
+  const statusIndex = { paid: 0, processing: 1, shipped: 2, delivered: 3 }[order.rawStatus] ?? 0;
+  const stages = [
+    { title: "Order confirmed", detail: order.date },
+    { title: "Being prepared", detail: "Your items are being packed" },
+    { title: "With delivery partner", detail: "On the way to your delivery area" },
+    { title: "Delivered", detail: "Order received" },
+  ];
+
+  useEffect(() => {
+    closeButton.current?.focus();
+    const onKeyDown = (event) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
+  const headline = cancelled ? "This order was cancelled" : isCustomerArranged ? (order.rawStatus === "delivered" ? "Collection complete" : "Collection arrangement in progress") : order.status;
+  const subline = cancelled ? "Contact us if you need help with this order." : isCustomerArranged ? "We’ll use the note below to coordinate collection." : order.rawStatus === "delivered" ? "This order has been delivered." : order.estimatedDelivery && order.estimatedDelivery !== "To be confirmed" ? `Expected by ${order.estimatedDelivery}` : "We’ll confirm the delivery estimate shortly.";
+
+  return <div className="fixed inset-0 z-50 flex items-end bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="tracking-title" className="max-h-[92vh] w-full overflow-y-auto rounded-t-[2rem] bg-white shadow-2xl dark:bg-stone-900 sm:max-w-lg sm:rounded-[2rem]">
+      <div className="sticky top-0 z-10 flex items-start justify-between border-b border-stone-100 bg-white/95 px-4 py-5 backdrop-blur dark:border-stone-800 dark:bg-stone-900/95 sm:px-8">
+        <div><p className="text-xs font-semibold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">Order {order.id}</p><h3 id="tracking-title" className="mt-1 text-xl font-bold text-stone-900 dark:text-stone-100">Track your order</h3></div>
+        <button ref={closeButton} type="button" onClick={onClose} aria-label="Close tracking" className="rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:hover:bg-stone-800"><X size={20} /></button>
+      </div>
+      <div className="p-6 sm:p-8">
+        <div className={`rounded-2xl p-5 ${cancelled ? "bg-rose-50 text-rose-900 dark:bg-rose-950/30 dark:text-rose-100" : "bg-emerald-50 text-stone-900 dark:bg-emerald-950/35 dark:text-stone-100"}`}><div className="flex gap-3"><span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${cancelled ? "bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"}`}>{isCustomerArranged ? <Package size={21} /> : <Truck size={21} />}</span><div><p className="text-xs font-bold uppercase tracking-[.13em] opacity-70">Current status</p><p className="mt-1 text-lg font-bold">{headline}</p><p className="mt-1 text-sm leading-5 opacity-75">{subline}</p></div></div></div>
+        {!isCustomerArranged && order.trackingNumber && <p className="mt-4 break-words rounded-xl border border-stone-200 px-4 py-3 text-sm text-stone-600 dark:border-stone-700 dark:text-stone-300"><span className="block font-semibold text-stone-900 dark:text-stone-100 sm:inline">Tracking / rider reference:</span> {order.trackingNumber}</p>}
+        {order.fulfilmentNote && <div className="mt-4 rounded-xl bg-stone-50 px-4 py-3 text-sm leading-6 text-stone-600 dark:bg-stone-800 dark:text-stone-300"><p className="font-semibold text-stone-900 dark:text-stone-100">Delivery note</p><p className="mt-1">{order.fulfilmentNote}</p></div>}
+        {!cancelled && !isCustomerArranged && <div className="relative mt-7 space-y-6 before:absolute before:bottom-3 before:left-4 before:top-3 before:w-0.5 before:bg-stone-200 dark:before:bg-stone-700">{stages.map((stage, index) => <TrackingStep key={stage.title} {...stage} done={index < statusIndex || order.rawStatus === "delivered"} current={index === statusIndex && order.rawStatus !== "delivered"} />)}</div>}
+        {!cancelled && !isCustomerArranged && <div className="mt-7 rounded-xl border border-stone-200 p-4 text-sm dark:border-stone-700"><p className="font-semibold text-stone-900 dark:text-stone-100">Delivery details</p><p className="mt-1 text-stone-600 dark:text-stone-300">{order.shippingAddress?.recipient || "Delivery address"}{order.shippingAddress?.city ? ` · ${order.shippingAddress.city}` : ""}</p>{order.estimatedDelivery && order.estimatedDelivery !== "To be confirmed" && <p className="mt-1 text-stone-500 dark:text-stone-400">Estimated delivery: {order.estimatedDelivery}</p>}</div>}
+        <button type="button" onClick={onClose} className="mt-7 w-full rounded-xl bg-stone-900 py-3 text-sm font-semibold text-white transition hover:bg-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500">Done</button>
+      </div>
+    </section>
+  </div>;
+}
+
+function TrackingStep({ title, detail, done, current }) {
   return (
-    <div className="relative flex items-start gap-4 pl-8">
+    <div className="relative flex items-start pl-14">
       <div
         className={`absolute left-0 top-0.5 flex h-8 w-8 items-center justify-center rounded-full border-2 bg-white text-xs font-bold transition ${
           done
@@ -1278,7 +1258,7 @@ function TrackingStep({ title, time, done, current }) {
         <h4 className={`text-sm font-bold ${done ? "text-stone-900 dark:text-stone-100" : "text-stone-400"}`}>
           {title}
         </h4>
-        <p className="text-xs text-stone-500 dark:text-stone-400">{time}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{detail}</p>
       </div>
     </div>
   );

@@ -31,9 +31,9 @@ export default function Categories({ onCategoryChange }) {
         </h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-5 sm:gap-x-5">
+      <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-x-5 sm:overflow-visible sm:px-0">
         {loading ? (
-          <div className="col-span-full py-10 text-center text-sm text-stone-500 dark:text-stone-400">Loading categories…</div>
+          <div className="w-full py-10 text-center text-sm text-stone-500 dark:text-stone-400 sm:col-span-full">Loading categories…</div>
         ) : categories.map((category) => {
           const count = getCount(category.name);
           return (
@@ -41,7 +41,7 @@ export default function Categories({ onCategoryChange }) {
               key={category.id}
               type="button"
               onClick={() => handleClick(category)}
-              className="group flex min-w-0 flex-col items-center text-center"
+              className="group flex w-24 shrink-0 flex-col items-center text-center sm:w-auto"
             >
               <span className="relative block h-24 w-24 overflow-hidden rounded-full border-2 border-white bg-stone-100 shadow-md ring-1 ring-stone-200 transition duration-300 group-hover:-translate-y-1 group-hover:scale-105 group-hover:ring-amber-400 dark:bg-stone-800 dark:ring-stone-700 sm:h-28 sm:w-28">
                 <img
