@@ -46,6 +46,45 @@ body {
     font-family: var(--font-sans);
 }
 
+/* Make native admin image fields clearly look like upload controls. */
+input[type="file"][accept="image/*"] {
+    width: 100%;
+    cursor: pointer;
+    border: 1px dashed #a8a29e;
+    border-radius: 0.75rem;
+    background: #fafaf9;
+    padding: 0.45rem;
+    color: #57534e;
+    font-size: 0.875rem;
+}
+
+input[type="file"][accept="image/*"]::file-selector-button {
+    margin-right: 0.75rem;
+    cursor: pointer;
+    border: 0;
+    border-radius: 0.5rem;
+    background: #dcfce7;
+    padding: 0.55rem 0.75rem;
+    color: #15803d;
+    font-weight: 600;
+}
+
+input[type="file"][accept="image/*"]:hover {
+    border-color: #22c55e;
+    background: #f0fdf4;
+}
+
+.dark input[type="file"][accept="image/*"] {
+    border-color: #57534e;
+    background: #292524;
+    color: #d6d3d1;
+}
+
+.dark input[type="file"][accept="image/*"]::file-selector-button {
+    background: rgb(20 83 45 / 0.55);
+    color: #86efac;
+}
+
 /* Existing small labels keep their spacing, without switching to a technical monospace face. */
 .font-mono {
     font-family: var(--font-sans);
