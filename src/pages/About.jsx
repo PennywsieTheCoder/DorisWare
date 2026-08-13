@@ -53,7 +53,8 @@ export default function About() {
     }
 
     loadContent();
-    return () => { isMounted = false; };
+    const channel = supabase.channel("about-content").on("postgres_changes", { event: "*", schema: "public", table: "about_content" }, loadContent).subscribe();
+    return () => { isMounted = false; supabase.removeChannel(channel); };
   }, []);
 
   const story = content ?? {

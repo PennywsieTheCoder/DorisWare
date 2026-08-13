@@ -238,6 +238,7 @@ export default function Cart() {
     count,
     removeFromCart,
     updateQuantity,
+    clearCart,
     cartAlert,
     clearCartAlert,
     isCartOpen,
@@ -246,6 +247,7 @@ export default function Cart() {
 
   const navigate = useNavigate();
   const drawerRef = useRef(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   /* Trap focus & close on Escape */
   useEffect(() => {
@@ -286,7 +288,7 @@ export default function Cart() {
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className="absolute inset-y-0 right-0 flex w-full translate-x-0 flex-col bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] dark:bg-stone-950 sm:max-w-[420px]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] w-full translate-x-0 flex-col rounded-t-[2rem] bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] dark:bg-stone-950 sm:inset-y-0 sm:left-auto sm:max-h-none sm:max-w-[420px] sm:rounded-none"
       >
         {/* ── Header ─────────────────────────────────────── */}
         <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-5 py-4 dark:border-stone-800/80">
@@ -306,15 +308,10 @@ export default function Cart() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={closeCart}
-            aria-label="Close cart"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 text-stone-400 transition-all hover:border-stone-300 hover:bg-stone-50 hover:text-stone-700 dark:border-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2"><button type="button" onClick={() => setConfirmClear(true)} disabled={items.length === 0} className="rounded-lg px-2.5 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:pointer-events-none disabled:opacity-40 dark:text-red-400 dark:hover:bg-red-950/30">Clear cart</button><button type="button" onClick={closeCart} aria-label="Close cart" className="flex h-9 w-9 items-center justify-center rounded-xl border border-stone-200 text-stone-400 transition-all hover:border-stone-300 hover:bg-stone-50 hover:text-stone-700 dark:border-stone-800 dark:hover:bg-stone-800 dark:hover:text-stone-300"><X className="h-4 w-4" /></button></div>
         </div>
+
+        {confirmClear && <div className="mx-5 mt-3 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm dark:border-red-900/60 dark:bg-red-950/30"><p className="text-red-800 dark:text-red-200">Remove all items from your cart?</p><div className="flex shrink-0 gap-2"><button type="button" onClick={() => setConfirmClear(false)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-stone-600 hover:bg-white dark:text-stone-300 dark:hover:bg-stone-800">Keep</button><button type="button" onClick={() => { clearCart(); setConfirmClear(false); }} className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Clear</button></div></div>}
 
         {/* ── Stock / promo alert ────────────────────────── */}
         {cartAlert && (

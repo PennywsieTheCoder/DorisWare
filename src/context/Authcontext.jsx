@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { PRODUCTS } from "../data/products";
 import { setSessionPersistence, supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
@@ -57,7 +56,10 @@ function toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUs
     avatar: profile?.avatar_url ?? "",
     avatarPath: profile?.avatar_url ?? "",
     role: profile?.role ?? "customer",
-    favorites: PRODUCTS.filter((product) => favoriteIds.includes(product.id)),
+    // Product details are resolved from the live catalog in ProfilePage. Keeping
+    // each saved ID here means every Admin-created product remains a favorite
+    // after a refresh instead of being limited to the retired static catalog.
+    favorites: favoriteIds.map((id) => previousUser?.favorites?.find((product) => product.id === id) ?? { id }),
     orders,
     addresses,
     points: previousUser?.points ?? 0,

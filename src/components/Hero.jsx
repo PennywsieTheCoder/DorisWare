@@ -1,16 +1,28 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { useHeroImages } from "../hooks/useHeroImages";
 
 export default function Hero() {
+  const images = useHeroImages();
+  const [activeImage, setActiveImage] = useState(0);
+
+  useEffect(() => {
+    if (images.length < 2) return undefined;
+    const timer = setInterval(() => setActiveImage((current) => (current + 1) % images.length), 6500);
+    return () => clearInterval(timer);
+  }, [images.length]);
+
+  const imageUrls = images.map((image) => image.startsWith("http")
+    ? image
+    : `${import.meta.env.BASE_URL}${image.replace(/^\//, "")}`);
+  const displayedImage = Math.min(activeImage, Math.max(imageUrls.length - 1, 0));
+
   return (
     <section className="relative h-[430px] w-full overflow-hidden sm:h-[470px] lg:h-[500px]">
       {/* Background Image with Ambient Pan-Zoom Animation */}
       <div className="absolute inset-0 select-none overflow-hidden">
-        <img
-          src="./images/herobanner.png"
-          alt="DorisWare premium kitchenware"
-          className="h-full w-full object-cover transition-all duration-[10s] scale-105 animate-[zoomPan_20s_infinite_alternate]"
-        />
+        {imageUrls.map((url, index) => <img key={url} src={url} alt={index === displayedImage ? "DorisWare premium kitchenware" : ""} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 scale-105 animate-[zoomPan_20s_infinite_alternate] ${index === displayedImage ? "opacity-100" : "opacity-0"}`} />)}
         {/* CSS Animation injection inline for the zoomPan effect */}
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes zoomPan {
@@ -77,6 +89,8 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      {images.length > 1 && <div className="absolute bottom-11 left-1/2 z-20 flex -translate-x-1/2 gap-2">{images.map((url, index) => <button key={url} type="button" onClick={() => setActiveImage(index)} aria-label={`Show hero image ${index + 1}`} className={`h-2 w-2 rounded-full transition ${index === displayedImage ? "bg-white scale-125" : "bg-white/50 hover:bg-white/80"}`} />)}</div>}
 
       {/* Curved Wave Bottom Divider */}
       <div className="absolute -bottom-1 left-0 w-full overflow-hidden leading-none z-10">
