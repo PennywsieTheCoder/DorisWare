@@ -80,7 +80,7 @@ export default function ProfilePage() {
     name: user?.name ?? "",
     email: user?.email ?? "",
     phone: user?.phone ?? "",
-    birthday: user?.birthday ?? "1994-05-15",
+    birthday: user?.birthday ?? "",
     cookingStyle: user?.cookingStyle ?? "Cast Iron & Heavy Dutch Ovens",
   }));
 

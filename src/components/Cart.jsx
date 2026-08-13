@@ -288,7 +288,7 @@ export default function Cart() {
       {/* Drawer */}
       <div
         ref={drawerRef}
-        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] w-full translate-x-0 flex-col rounded-t-[2rem] bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] dark:bg-stone-950 sm:inset-y-0 sm:left-auto sm:max-h-none sm:max-w-[420px] sm:rounded-none"
+        className="absolute inset-y-0 right-0 flex w-full translate-x-0 flex-col bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] dark:bg-stone-950 sm:max-w-[420px]"
       >
         {/* ── Header ─────────────────────────────────────── */}
         <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-5 py-4 dark:border-stone-800/80">

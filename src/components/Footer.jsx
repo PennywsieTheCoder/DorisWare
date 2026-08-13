@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { supabase, withRequestTimeout } from "../lib/supabase";
 import { useStoreLogo } from "../hooks/useStoreLogo";
+import TurnstileWidget from "./TurnstileWidget";
 
 const socialPlatforms = {
   facebook: { label: "Facebook", icon: SiFacebook }, instagram: { label: "Instagram", icon: SiInstagram }, x: { label: "X", icon: SiX }, tiktok: { label: "TikTok", icon: SiTiktok }, pinterest: { label: "Pinterest", icon: SiPinterest },
@@ -25,25 +26,28 @@ function FooterNewsletter() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (!email.trim()) return;
+    if (!email.trim() || !turnstileToken) { setError("Complete the security check before joining."); return; }
     setSaving(true);
     setError("");
     if (!navigator.onLine) { setError("You’re offline. Reconnect and try again."); setSaving(false); return; }
-    const { error: subscribeError } = await withRequestTimeout(supabase
-      .from("newsletter_subscribers")
-      .insert({ email: email.trim().toLowerCase() }));
+    const { data, error: subscribeError } = await withRequestTimeout(supabase.functions.invoke("submit-public-form", {
+      body: { formType: "newsletter", turnstileToken, payload: { email: email.trim().toLowerCase() } },
+    }));
     if (subscribeError) {
-      setError(subscribeError.code === "23505" ? "This email is already on the list." : "We could not save your email. Please try again.");
+      setError(data?.error || "We could not save your email. Please try again.");
     } else {
       setSubmitted(true);
     }
+    setTurnstileReset((value) => value + 1);
     setSaving(false);
   }
 
-  return <div className="max-w-sm"><p className="text-sm font-semibold text-white">A little note from the kitchen</p><p className="mt-2 text-sm leading-6 text-stone-400">New arrivals, practical finds, and occasional offers.</p>{submitted ? <p className="mt-4 text-sm font-medium text-emerald-400">Thanks — you&apos;re on the list.</p> : <><form onSubmit={handleSubmit} className="mt-4 flex gap-2"><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email address" className="min-w-0 flex-1 rounded-xl border border-stone-700 bg-stone-800 px-3 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30" aria-label="Email address" /><button type="submit" disabled={saving} className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:opacity-60">{saving ? "Joining…" : "Join"}</button></form>{error && <p className="mt-3 text-sm text-rose-400">{error}</p>}</>}</div>;
+  return <div className="max-w-sm"><p className="text-sm font-semibold text-white">A little note from the kitchen</p><p className="mt-2 text-sm leading-6 text-stone-400">New arrivals, practical finds, and occasional offers.</p>{submitted ? <p className="mt-4 text-sm font-medium text-emerald-400">Thanks — you&apos;re on the list.</p> : <><form onSubmit={handleSubmit} className="mt-4 space-y-3"><div className="flex gap-2"><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email address" className="min-w-0 flex-1 rounded-xl border border-stone-700 bg-stone-800 px-3 py-2.5 text-sm text-stone-100 placeholder:text-stone-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/30" aria-label="Email address" /><button type="submit" disabled={saving || !turnstileToken} className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-stone-950 transition hover:bg-amber-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 disabled:opacity-60">{saving ? "Joining…" : "Join"}</button></div><TurnstileWidget onTokenChange={setTurnstileToken} resetSignal={turnstileReset} /></form>{error && <p className="mt-3 text-sm text-rose-400">{error}</p>}</>}</div>;
 }
 
 export default function Footer({ storeName }) {

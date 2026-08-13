@@ -49,6 +49,7 @@ export default function StoreAssistant() {
   useEffect(() => {
     if (!isOpen) return undefined;
     const closeOnOutsidePress = (event) => {
+      if (window.matchMedia("(max-width: 639px)").matches) return;
       if (!panelRef.current?.contains(event.target) && !launcherRef.current?.contains(event.target)) setIsOpen(false);
     };
     document.addEventListener("pointerdown", closeOnOutsidePress);
