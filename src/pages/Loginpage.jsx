@@ -10,8 +10,8 @@ import {
   ChefHat,
   Star,
 } from "lucide-react";
-import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { useAuth } from "../context/Authcontext";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 /* ─── Shared input style ──────────────────────────────────────────────────── */
 export const inputClass =
@@ -170,6 +170,10 @@ export function Divider() {
   );
 }
 
+export function GoogleMark() {
+  return <svg aria-hidden="true" viewBox="0 0 18 18" className="h-[18px] w-[18px] shrink-0"><path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.251-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.8 2.716v2.258h2.91c1.704-1.568 2.686-3.876 2.686-6.615Z" /><path fill="#34A853" d="M9 18c2.43 0 4.466-.806 5.954-2.18l-2.91-2.258c-.806.54-1.837.858-3.044.858-2.343 0-4.326-1.582-5.034-3.708H.956v2.332A9 9 0 0 0 9 18Z" /><path fill="#FBBC05" d="M3.966 10.712A5.412 5.412 0 0 1 3.684 9c0-.593.102-1.17.282-1.712V4.956H.956A9 9 0 0 0 0 9c0 1.452.348 2.827.956 4.044l3.01-2.332Z" /><path fill="#EA4335" d="M9 3.58c1.322 0 2.51.454 3.444 1.345l2.584-2.584C13.462.88 11.426 0 9 0A9 9 0 0 0 .956 4.956l3.01 2.332C4.674 5.162 6.657 3.58 9 3.58Z" /></svg>;
+}
+
 /* ─── AuthShell (shared by Login & Signup) ───────────────────────────────── */
 export function AuthShell({ title, description, children, bottomLink }) {
   return (
@@ -235,32 +239,39 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const destination = location.state?.from || "/";
+  const successMessage = location.state?.message;
 
   async function submit(e) {
     e.preventDefault();
     setError("");
+    if (!captchaToken) { setError("Complete the security check before signing in."); return; }
     setLoading(true);
     try {
-      const { error: signInError } = await signIn({ ...form, remember });
+      const { error: signInError } = await signIn({ ...form, remember, captchaToken });
       if (signInError) throw signInError;
       navigate(destination, { replace: true });
     } catch (signInError) {
       setError(signInError.message || "Incorrect email or password. Please try again.");
     } finally {
+      setCaptchaReset((value) => value + 1);
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
     setError("");
+    if (!captchaToken) { setError("Complete the security check before continuing with Google."); return; }
     setGoogleLoading(true);
     try {
-      const { error: googleError } = await signInWithGoogle();
+      const { error: googleError } = await signInWithGoogle(captchaToken);
       if (googleError) throw googleError;
     } catch (googleError) {
       setError(googleError.message || "Google sign-in could not start. Please try again.");
     } finally {
+      setCaptchaReset((value) => value + 1);
       setGoogleLoading(false);
     }
   }
@@ -286,11 +297,11 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={handleGoogle}
-        disabled={googleLoading}
+        disabled={googleLoading || !captchaToken}
         id="google-signin-btn"
-        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white py-3.5 text-sm font-semibold text-stone-700 shadow-sm transition-all duration-200 hover:bg-stone-50 hover:border-stone-300 hover:shadow active:scale-[0.98] disabled:opacity-60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800/80"
+        className="flex h-11 w-full items-center justify-center gap-3 rounded-md border border-[#747775] bg-white px-3 text-sm font-medium text-[#1f1f1f] shadow-sm transition hover:bg-[#f8fafd] hover:shadow focus:outline-none focus-visible:ring-4 focus-visible:ring-[#0b57d0]/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-white dark:text-[#1f1f1f]"
       >
-        <SiGoogle size={18} />
+        <GoogleMark />
         {googleLoading ? "Signing in…" : "Continue with Google"}
       </button>
 
@@ -324,13 +335,12 @@ export default function LoginPage() {
             <label className="text-sm font-medium text-stone-700 dark:text-stone-300">
               Password
             </label>
-            <button
-              type="button"
+            <Link
+              to="/?reset-password=request"
               className="text-xs font-medium text-green-600 hover:text-green-700 dark:text-green-400 transition-colors"
-              tabIndex={-1}
             >
               Forgot password?
-            </button>
+            </Link>
           </div>
           <div className="relative">
             <LockKeyhole className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-stone-400" />
@@ -357,6 +367,8 @@ export default function LoginPage() {
           </div>
         </div>
 
+        <TurnstileWidget onTokenChange={setCaptchaToken} resetSignal={captchaReset} />
+
         {/* Error message */}
         {error && (
           <p
@@ -364,6 +376,12 @@ export default function LoginPage() {
             className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400"
           >
             {error}
+          </p>
+        )}
+
+        {successMessage && (
+          <p role="status" className="rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-950/40 dark:text-green-300">
+            {successMessage}
           </p>
         )}
 
@@ -385,7 +403,7 @@ export default function LoginPage() {
         <button
           type="submit"
           id="signin-submit-btn"
-          disabled={loading}
+          disabled={loading || !captchaToken}
           className="group relative mt-2 flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-green-500/20 transition-all duration-200 hover:from-green-500 hover:to-emerald-500 hover:shadow-green-500/30 active:scale-[0.98] disabled:opacity-70"
         >
           <span className="flex items-center gap-2">

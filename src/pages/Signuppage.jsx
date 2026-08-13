@@ -1,9 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { User, Mail, LockKeyhole, Eye, EyeOff, ArrowRight } from "lucide-react";
-import { SiGoogle } from "@icons-pack/react-simple-icons";
 import { useAuth } from "../context/Authcontext";
-import { AuthShell, Divider, inputClass } from "./Loginpage";
+import { AuthShell, Divider, GoogleMark, inputClass } from "./Loginpage";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 export default function SignupPage() {
   const { signUp, signInWithGoogle } = useAuth();
@@ -15,15 +15,18 @@ export default function SignupPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const destination = location.state?.from || "/";
 
   async function submit(e) {
     e.preventDefault();
     setError("");
     setMessage("");
+    if (!captchaToken) { setError("Complete the security check before creating your account."); return; }
     setLoading(true);
     try {
-      const { data, error: signUpError } = await signUp(form);
+      const { data, error: signUpError } = await signUp({ ...form, captchaToken });
       if (signUpError) throw signUpError;
       if (!data.session) {
         setMessage("Account created. Check your email to confirm your address, then sign in.");
@@ -33,18 +36,22 @@ export default function SignupPage() {
     } catch (signUpError) {
       setError(signUpError.message || "We could not create the account. Please try again.");
     } finally {
+      setCaptchaReset((value) => value + 1);
       setLoading(false);
     }
   }
 
   async function handleGoogle() {
     setError("");
+    if (!captchaToken) { setError("Complete the security check before continuing with Google."); return; }
     setGoogleLoading(true);
     try {
-      const { error: googleError } = await signInWithGoogle();
+      const { error: googleError } = await signInWithGoogle(captchaToken);
       if (googleError) throw googleError;
     } catch (googleError) {
       setError(googleError.message || "Google sign-up could not start. Please try again.");
+    } finally {
+      setCaptchaReset((value) => value + 1);
       setGoogleLoading(false);
     }
   }
@@ -70,11 +77,11 @@ export default function SignupPage() {
       <button
         type="button"
         onClick={handleGoogle}
-        disabled={googleLoading}
+        disabled={googleLoading || !captchaToken}
         id="google-signup-btn"
-        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-stone-200 bg-white py-3.5 text-sm font-semibold text-stone-700 shadow-sm transition-all duration-200 hover:bg-stone-50 hover:border-stone-300 hover:shadow active:scale-[0.98] disabled:opacity-60 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800/80"
+        className="flex h-11 w-full items-center justify-center gap-3 rounded-md border border-[#747775] bg-white px-3 text-sm font-medium text-[#1f1f1f] shadow-sm transition hover:bg-[#f8fafd] hover:shadow focus:outline-none focus-visible:ring-4 focus-visible:ring-[#0b57d0]/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-600 dark:bg-white dark:text-[#1f1f1f]"
       >
-        <SiGoogle size={18} />
+        <GoogleMark />
         {googleLoading ? "Signing up…" : "Sign up with Google"}
       </button>
 
@@ -175,6 +182,8 @@ export default function SignupPage() {
           </span>
         </label>
 
+        <TurnstileWidget onTokenChange={setCaptchaToken} resetSignal={captchaReset} />
+
         {error && (
           <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
             {error}
@@ -191,7 +200,7 @@ export default function SignupPage() {
         <button
           type="submit"
           id="signup-submit-btn"
-          disabled={loading}
+          disabled={loading || !captchaToken}
           className="group relative mt-2 flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-green-500/20 transition-all duration-200 hover:from-green-500 hover:to-emerald-500 hover:shadow-green-500/30 active:scale-[0.98] disabled:opacity-70"
         >
           <span className="flex items-center gap-2">

@@ -65,6 +65,7 @@ function toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUs
     points: previousUser?.points ?? 0,
     tier: previousUser?.tier ?? "Culinary Enthusiast",
     settings: previousUser?.settings ?? defaultSettings,
+    birthday: profile?.date_of_birth ?? "",
   };
 }
 
@@ -91,9 +92,10 @@ export function AuthProvider({ children }) {
       setAuthLoading(false);
       return;
     }
+    const authMetadata = authUser.user_metadata ?? {};
 
     const [profileResult, addressesResult, favoritesResult, orders] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, phone, avatar_url, role").eq("id", authUser.id).maybeSingle(),
+      supabase.from("profiles").select("id, full_name, phone, avatar_url, date_of_birth, role").eq("id", authUser.id).maybeSingle(),
       supabase.from("addresses").select("id, label, recipient, phone, street, city, region, country, is_default").eq("user_id", authUser.id).order("created_at"),
       supabase.from("favorites").select("product_id").eq("user_id", authUser.id),
       fetchOrders(authUser.id),
@@ -104,6 +106,21 @@ export function AuthProvider({ children }) {
     if (favoritesResult.error) console.error("Could not load favorites:", favoritesResult.error.message);
 
     const signedAvatarMarker = "/storage/v1/object/sign/avatars/";
+    const googleName = authMetadata.full_name ?? authMetadata.name ?? "";
+    const googleAvatar = authMetadata.avatar_url ?? authMetadata.picture ?? "";
+    const missingProfileDetails = profileResult.data && {
+      ...(profileResult.data.full_name ? {} : googleName ? { full_name: googleName } : {}),
+      ...(profileResult.data.avatar_url ? {} : googleAvatar ? { avatar_url: googleAvatar } : {}),
+    };
+    if (missingProfileDetails && Object.keys(missingProfileDetails).length > 0) {
+      const { data, error } = await supabase
+        .from("profiles")
+        .update(missingProfileDetails)
+        .eq("id", authUser.id)
+        .select("id, full_name, phone, avatar_url, date_of_birth, role")
+        .single();
+      if (!error && data) profileResult.data = data;
+    }
     const savedAvatarUrl = profileResult.data?.avatar_url ?? "";
     const storedAvatarPath = savedAvatarUrl.includes(signedAvatarMarker)
       ? decodeURIComponent(savedAvatarUrl.split(signedAvatarMarker)[1].split("?")[0])
@@ -154,28 +171,29 @@ export function AuthProvider({ children }) {
     return () => window.clearInterval(timer);
   }, [avatarPath]);
 
-  async function signIn({ email, password, remember = true }) {
+  async function signIn({ email, password, remember = true, captchaToken }) {
     setSessionPersistence(remember);
-    const result = await supabase.auth.signInWithPassword({ email, password });
+    const result = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } });
     if (!result.error && result.data.user) await loadUser(result.data.user);
     return result;
   }
 
-  async function signUp({ name, email, password }) {
+  async function signUp({ name, email, password, captchaToken }) {
     return supabase.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: name },
         emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+        captchaToken,
       },
     });
   }
 
-  async function signInWithGoogle() {
+  async function signInWithGoogle(captchaToken) {
     return supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}` },
+      options: { redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`, captchaToken },
     });
   }
 
@@ -185,7 +203,7 @@ export function AuthProvider({ children }) {
     const profileUpdates = {
       full_name: details.name ?? user.name,
       phone: details.phone ?? user.phone,
-      updated_at: new Date().toISOString(),
+      date_of_birth: details.birthday || null,
     };
     if (details.avatar !== undefined) profileUpdates.avatar_url = details.avatar;
     const { error } = await supabase.from("profiles").update(profileUpdates).eq("id", user.id);
