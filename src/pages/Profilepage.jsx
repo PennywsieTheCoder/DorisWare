@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Truck,
   FileText,
-  ShoppingBag,
   Plus,
   Trash2,
   ShieldCheck,
@@ -30,6 +29,8 @@ import {
 import { useAuth } from "../context/Authcontext";
 import { useCart } from "../context/Cartcontext";
 import { useTheme } from "../context/Themecontext ";
+import { useProducts } from "../hooks/useProducts";
+import ProductCard from "../components/Productcard";
 
 const inputClass =
   "mt-1.5 w-full rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-stone-900 outline-none transition focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-100 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-green-500 dark:focus:ring-green-950/50";
@@ -57,13 +58,13 @@ export default function ProfilePage() {
     uploadAvatar,
     updateSettings,
     signOut,
-    toggleFavorite,
     removeAddress,
     setDefaultAddress,
     addAddress,
   } = useAuth();
   const { addToCart } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { products: currentProducts } = useProducts();
   const location = useLocation();
   const fileInput = useRef(null);
 
@@ -154,7 +155,7 @@ export default function ProfilePage() {
     });
   }
 
-  const favorites = user.favorites ?? [];
+  const favorites = (user.favorites ?? []).map((favorite) => currentProducts.find((product) => product.id === favorite.id) ?? favorite);
   const orders = user.orders ?? [];
   const addresses = user.addresses ?? [];
   const points = user.points ?? 350;
@@ -177,7 +178,7 @@ export default function ProfilePage() {
       )}
 
       {/* Hero Header */}
-      <div className="mx-4 mt-5 overflow-hidden rounded-[2rem] bg-stone-950 px-5 py-8 text-white shadow-xl shadow-stone-900/10 sm:mx-6 sm:px-8 sm:py-10 lg:mx-8">
+      <div className="relative mx-4 mt-5 overflow-hidden rounded-[2rem] bg-stone-950 px-5 py-8 text-white shadow-xl shadow-stone-900/10 sm:mx-6 sm:px-8 sm:py-10 lg:mx-8">
         <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="absolute -right-20 -bottom-20 h-80 w-80 rounded-full bg-teal-500/10 blur-3xl" />
 
@@ -277,7 +278,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 pt-7 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl px-4 pt-7 sm:px-6 lg:px-8">
         {/* Navigation Tabs */}
         <div className="no-scrollbar flex gap-2 overflow-x-auto rounded-2xl border border-stone-200 bg-white p-2 shadow-sm dark:border-stone-800 dark:bg-stone-900">
           <TabButton
@@ -644,64 +645,8 @@ export default function ProfilePage() {
             </div>
 
             {favorites.length > 0 ? (
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {favorites.map((item) => (
-                  <div
-                    key={item.id}
-                    className="group relative flex flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white p-5 shadow-sm transition hover:shadow-md dark:border-stone-800 dark:bg-stone-900"
-                  >
-                    <button
-                      onClick={() => {
-                        toggleFavorite(item);
-                        showToast(`Removed ${item.name} from favorites`);
-                      }}
-                      className="absolute right-4 top-4 z-10 rounded-full bg-white/80 p-2 text-rose-500 shadow-md backdrop-blur-md transition hover:bg-rose-50 dark:bg-stone-900/80"
-                      title="Remove from favorites"
-                    >
-                      <Heart size={18} fill="currentColor" />
-                    </button>
-
-                    <div className="h-44 w-full overflow-hidden rounded-2xl bg-stone-50 dark:bg-stone-800">
-                      <img
-                        src={imageUrl(item.images?.[0])}
-                        alt={item.name}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      />
-                    </div>
-
-                    <div className="mt-4 flex flex-1 flex-col justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                          {item.category || "Cookware"}
-                        </span>
-                        <Link
-                          to={`/product/${item.id}`}
-                          className="mt-1 block font-bold text-stone-900 hover:text-emerald-700 dark:text-stone-100 dark:hover:text-emerald-400"
-                        >
-                          {item.name}
-                        </Link>
-                        <p className="mt-1 line-clamp-2 text-xs text-stone-500 dark:text-stone-400">
-                          {item.description}
-                        </p>
-                      </div>
-
-                      <div className="mt-5 flex items-center justify-between pt-4 border-t border-stone-100 dark:border-stone-800">
-                        <span className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                          {item.price}
-                        </span>
-                        <button
-                          onClick={() => {
-                            addToCart(item);
-                            showToast(`Added ${item.name} to cart!`);
-                          }}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-800 active:scale-95 dark:bg-emerald-600"
-                        >
-                          <ShoppingBag size={15} /> Add to Cart
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:gap-7">
+                {favorites.map((item) => <ProductCard key={item.id} {...item} />)}
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-stone-300 p-12 text-center dark:border-stone-800">

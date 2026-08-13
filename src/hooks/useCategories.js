@@ -20,7 +20,8 @@ export function useCategories() {
     }
 
     loadCategories();
-    return () => { active = false; };
+    const channel = supabase.channel(`store-categories-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "categories" }, loadCategories).subscribe();
+    return () => { active = false; supabase.removeChannel(channel); };
   }, []);
 
   return { categories, loading };

@@ -7,6 +7,7 @@ import { useCart } from "../context/Cartcontext";
 import { useTheme } from "../context/Themecontext ";
 import { useAuth } from "../context/Authcontext";
 import Cart from "./Cart";
+import { useStoreLogo } from "../hooks/useStoreLogo";
 
 
 export default function Header({ storeName }) {
@@ -17,6 +18,7 @@ export default function Header({ storeName }) {
   const { count, openCart } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const logoUrl = useStoreLogo();
 
   const handleSearch = (event) => {
     event.preventDefault();
@@ -29,7 +31,7 @@ export default function Header({ storeName }) {
       <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800 dark:bg-stone-900/90">
         <div className="grid h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="DorisWare" className="h-9 w-9 shrink-0 rounded-full object-contain sm:h-10 sm:w-10" />
+            <img src={logoUrl} alt="DorisWare" className="h-9 w-9 shrink-0 rounded-full object-contain sm:h-10 sm:w-10" />
             <span className="hidden truncate font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:inline">{storeName}</span>
           </Link>
 

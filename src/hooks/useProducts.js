@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
+function resolveImage(image) {
+  if (!image) return null;
+  return image.startsWith("http") ? image : `${import.meta.env.BASE_URL}${image.replace(/^\//, "")}`;
+}
+
 function toProduct(row, promotion = null, ratingSummary = null) {
-  const image = row.image_url?.startsWith("http")
-    ? row.image_url
-    : row.image_url
-      ? `${import.meta.env.BASE_URL}${row.image_url.replace(/^\//, "")}`
-      : null;
+  const images = (row.image_urls?.length ? row.image_urls : [row.image_url]).map(resolveImage).filter(Boolean);
 
   const basePrice = Number(row.price);
   const discountPercent = Number(promotion?.discount_percent || 0);
@@ -20,7 +21,7 @@ function toProduct(row, promotion = null, ratingSummary = null) {
     originalPrice: qualifiesForDiscount ? basePrice : null,
     discountPercent: qualifiesForDiscount ? discountPercent : 0,
     quantity: row.stock_quantity,
-    images: image ? [image] : [],
+    images,
     ratingAverage: ratingSummary?.average ?? 0,
     reviewCount: ratingSummary?.count ?? 0,
   };
@@ -50,7 +51,7 @@ export function useProducts({ limit, category = "All", search = "", minPrice = "
     }
 
     async function loadProducts() {
-      let productsQuery = supabase.from("products").select("id, name, category, description, price, stock_quantity, image_url, featured").order("created_at");
+      let productsQuery = supabase.from("products").select("id, name, category, description, price, stock_quantity, image_url, image_urls, featured").order("created_at");
       if (category !== "All") productsQuery = productsQuery.eq("category", category);
       if (search.trim()) productsQuery = productsQuery.ilike("name", `%${search.trim()}%`);
       if (minPrice !== "") productsQuery = productsQuery.gte("price", Number(minPrice));
@@ -92,7 +93,11 @@ export function useProducts({ limit, category = "All", search = "", minPrice = "
     }
 
     loadProducts();
-    const channel = supabase.channel(`catalog-promo-prices-${crypto.randomUUID()}`).on("postgres_changes", { event: "*", schema: "public", table: "promo_banners" }, loadProducts).subscribe();
+    const channel = supabase.channel(`catalog-updates-${crypto.randomUUID()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "promo_banners" }, loadProducts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "products" }, loadProducts)
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_reviews" }, loadProducts)
+      .subscribe();
     return () => { active = false; clearTimeout(expirationTimer); supabase.removeChannel(channel); };
   }, [limit, category, search, minPrice, maxPrice]);
 
