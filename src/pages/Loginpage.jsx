@@ -177,7 +177,7 @@ export function GoogleMark() {
 /* ─── AuthShell (shared by Login & Signup) ───────────────────────────────── */
 export function AuthShell({ title, description, children, bottomLink }) {
   return (
-    <div className="flex min-h-screen bg-stone-50 dark:bg-stone-950">
+    <div className="relative flex min-h-screen overflow-hidden bg-stone-50 dark:bg-stone-950">
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -191,20 +191,20 @@ export function AuthShell({ title, description, children, bottomLink }) {
       <BrandPanel />
 
       {/* Right: the form */}
-      <div className="flex flex-1 items-center justify-center px-5 py-10 lg:px-10 xl:px-16">
-        <div className="w-full max-w-md">
+      <div className="relative flex flex-1 items-center justify-center px-4 pb-6 pt-24 sm:px-5 sm:py-10 lg:px-10 xl:px-16">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-br from-emerald-800 via-green-700 to-emerald-600 lg:hidden" />
+        <div className="pointer-events-none absolute -right-16 top-3 h-40 w-40 rounded-full border border-white/15 lg:hidden" />
+        <div className="relative w-full max-w-md rounded-[1.75rem] bg-white/95 px-5 py-6 shadow-[0_18px_48px_-24px_rgba(20,83,45,.5)] backdrop-blur sm:px-7 sm:py-8 dark:bg-stone-900/95 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none">
           {/* Mobile logo */}
-          <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-600 text-white">
+          <div className="-mt-14 mb-9 flex items-center gap-3 lg:mt-0 lg:hidden">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/30 bg-white/15 text-white shadow-lg backdrop-blur">
               <ChefHat className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold text-stone-900 dark:text-white">
-              DorisWare
-            </span>
+            <div><span className="block text-xl font-bold text-white">DorisWare</span><span className="text-xs text-emerald-100">Cook with confidence</span></div>
           </div>
 
           {/* Heading */}
-          <div className="mb-8">
+          <div className="mb-7">
             <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-white">
               {title}
             </h1>
