@@ -39,6 +39,11 @@ export default function TurnstileWidget({ onTokenChange, resetSignal }) {
       widgetIdRef.current = turnstile.render(containerRef.current, {
         sitekey: siteKey,
         theme: "auto",
+        // Normal widgets are 300px wide. Compact prevents the security check
+        // from being clipped inside narrow mobile forms.
+        size: window.matchMedia("(max-width: 380px)").matches ? "compact" : "flexible",
+        retry: "auto",
+        "refresh-expired": "auto",
         callback: onTokenChange,
         "expired-callback": () => onTokenChange(""),
         "error-callback": () => onTokenChange(""),
@@ -60,5 +65,5 @@ export default function TurnstileWidget({ onTokenChange, resetSignal }) {
   }, [onTokenChange, resetSignal]);
 
   if (!siteKey) return <p className="text-sm text-rose-400">Security check is not configured yet.</p>;
-  return <div ref={containerRef} aria-label="Security check" />;
+  return <div ref={containerRef} className="flex min-h-[65px] justify-center" aria-label="Security check" />;
 }
