@@ -62,10 +62,11 @@ function toAppUser(authUser, profile, addresses, favoriteIds, orders, previousUs
     favorites: favoriteIds.map((id) => previousUser?.favorites?.find((product) => product.id === id) ?? { id }),
     orders,
     addresses,
-    points: previousUser?.points ?? 0,
-    tier: previousUser?.tier ?? "Culinary Enthusiast",
+    points: profile?.reward_points ?? 0,
     settings: previousUser?.settings ?? defaultSettings,
     birthday: profile?.date_of_birth ?? "",
+    cookingStyle: profile?.cooking_style ?? "Cast Iron & Heavy Dutch Ovens",
+    memberSince: profile?.created_at ?? authUser.created_at ?? "",
   };
 }
 
@@ -95,7 +96,7 @@ export function AuthProvider({ children }) {
     const authMetadata = authUser.user_metadata ?? {};
 
     const [profileResult, addressesResult, favoritesResult, orders] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, phone, avatar_url, date_of_birth, role").eq("id", authUser.id).maybeSingle(),
+      supabase.from("profiles").select("id, full_name, phone, avatar_url, date_of_birth, cooking_style, reward_points, created_at, role").eq("id", authUser.id).maybeSingle(),
       supabase.from("addresses").select("id, label, recipient, phone, street, city, region, country, is_default").eq("user_id", authUser.id).order("created_at"),
       supabase.from("favorites").select("product_id").eq("user_id", authUser.id),
       fetchOrders(authUser.id),
@@ -117,7 +118,7 @@ export function AuthProvider({ children }) {
         .from("profiles")
         .update(missingProfileDetails)
         .eq("id", authUser.id)
-        .select("id, full_name, phone, avatar_url, date_of_birth, role")
+        .select("id, full_name, phone, avatar_url, date_of_birth, cooking_style, reward_points, created_at, role")
         .single();
       if (!error && data) profileResult.data = data;
     }
@@ -204,6 +205,7 @@ export function AuthProvider({ children }) {
       full_name: details.name ?? user.name,
       phone: details.phone ?? user.phone,
       date_of_birth: details.birthday || null,
+      cooking_style: details.cookingStyle ?? user.cookingStyle ?? null,
     };
     if (details.avatar !== undefined) profileUpdates.avatar_url = details.avatar;
     const { error } = await supabase.from("profiles").update(profileUpdates).eq("id", user.id);

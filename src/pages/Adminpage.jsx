@@ -41,8 +41,11 @@ export default function AdminPage() {
   const [inboxFilter, setInboxFilter] = useState("all");
   const [subscribers, setSubscribers] = useState([]);
   const [socialLinks, setSocialLinks] = useState([]);
+  const [clubSettings, setClubSettings] = useState(null);
+  const [clubTiers, setClubTiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [savingId, setSavingId] = useState("");
   const [reportRange, setReportRange] = useState(30);
   const [selectedReportDay, setSelectedReportDay] = useState("");
@@ -83,11 +86,15 @@ export default function AdminPage() {
   const supportMessages = allCustomerMessages.filter((message) => inboxFilter === "all" || (message.message_type ?? "support") === inboxFilter);
   const availableProductCategories = categories.filter((category) => category.is_active).map((category) => category.name);
 
+  function showSaveSuccess(message) {
+    setSuccessMessage(message);
+    window.setTimeout(() => setSuccessMessage(""), 2800);
+  }
 
   async function loadDashboard() {
     setLoading(true);
     setError("");
-    const [productsResult, categoriesResult, zonesResult, bannerResult, ordersResult, reviewsResult, aboutResult, messagesResult, subscribersResult, contactSettingsResult, socialLinksResult] = await Promise.all([
+    const [productsResult, categoriesResult, zonesResult, bannerResult, ordersResult, reviewsResult, aboutResult, messagesResult, subscribersResult, contactSettingsResult, socialLinksResult, clubSettingsResult, clubTiersResult] = await Promise.all([
       supabase.from("products").select("id, name, category, description, price, stock_quantity, image_url, image_urls, featured, is_active").order("created_at"),
       supabase.from("categories").select("id, name, description, image_url, sort_order, is_active").order("sort_order"),
       supabase.from("delivery_zones").select("id, name, regions, shipping_fee, estimated_delivery, is_active, sort_order").order("sort_order"),
@@ -99,9 +106,11 @@ export default function AdminPage() {
       supabase.from("newsletter_subscribers").select("id, email, status, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.from("store_contact_settings").select("id, email, phone, whatsapp_number, location_label, directions_url, support_hours, logo_url").eq("id", true).maybeSingle(),
       supabase.from("store_social_links").select("platform, url, is_active, sort_order").order("sort_order"),
+      supabase.from("club_settings").select("id, is_active, points_per_ghs, include_delivery_in_points").eq("id", true).maybeSingle(),
+      supabase.from("club_tiers").select("id, name, required_points, benefit, is_active, sort_order").order("sort_order"),
     ]);
 
-    if (productsResult.error || categoriesResult.error || zonesResult.error || bannerResult.error || ordersResult.error || reviewsResult.error || aboutResult.error || messagesResult.error || subscribersResult.error || contactSettingsResult.error || socialLinksResult.error) {
+    if (productsResult.error || categoriesResult.error || zonesResult.error || bannerResult.error || ordersResult.error || reviewsResult.error || aboutResult.error || messagesResult.error || subscribersResult.error || contactSettingsResult.error || socialLinksResult.error || clubSettingsResult.error || clubTiersResult.error) {
       setError("The dashboard data could not load. Confirm this account has the admin role, then refresh.");
     } else {
       setProducts(productsResult.data);
@@ -115,6 +124,8 @@ export default function AdminPage() {
       setSubscribers(subscribersResult.data);
       setContactSettings(contactSettingsResult.data);
       setSocialLinks(socialLinksResult.data);
+      setClubSettings(clubSettingsResult.data);
+      setClubTiers(clubTiersResult.data);
     }
     setLoading(false);
   }
@@ -131,11 +142,12 @@ export default function AdminPage() {
       promotions: ["Promo banner", "About page"],
       inbox: ["Customer inbox"],
       contact: ["Contact & location"],
+      club: ["DorisWare Club"],
     };
     const managedSections = Object.values(headingsBySection).flat().map((heading) => [...document.querySelectorAll("h2")].find((element) => element.textContent === heading)?.closest("section")).filter(Boolean);
     document.querySelectorAll("section.border-green-200, section.border-amber-200").forEach((section) => managedSections.push(section));
     managedSections.forEach((section) => { section.hidden = activeSection === "overview" || !headingsBySection[activeSection]?.some((heading) => section.querySelector("h2")?.textContent === heading) && !((activeSection === "products") && (section.classList.contains("border-green-200") || section.classList.contains("border-amber-200"))); });
-  }, [activeSection, editingProduct, editingCategory, promoBanner, aboutContent, supportMessages]);
+  }, [activeSection, editingProduct, editingCategory, promoBanner, aboutContent, supportMessages, clubSettings, clubTiers]);
 
   async function updateProduct(productId, updates) {
     setSavingId(productId);
@@ -309,6 +321,29 @@ export default function AdminPage() {
     setSavingId("");
   }
 
+  async function saveClubSettings(event) {
+    event.preventDefault();
+    if (!clubSettings) return;
+    setSavingId("club-settings"); setError("");
+    const updates = {
+      is_active: clubSettings.is_active,
+      points_per_ghs: Number(clubSettings.points_per_ghs),
+      include_delivery_in_points: clubSettings.include_delivery_in_points,
+    };
+    const { data, error: updateError } = await supabase.from("club_settings").update(updates).eq("id", true).select("id, is_active, points_per_ghs, include_delivery_in_points").single();
+    if (updateError) setError("DorisWare Club settings could not be saved."); else { setClubSettings(data); showSaveSuccess("Club settings saved."); }
+    setSavingId("");
+  }
+
+  async function saveClubTier(event, tier) {
+    event.preventDefault();
+    setSavingId(`club-tier-${tier.id}`); setError("");
+    const updates = { name: tier.name.trim(), required_points: Number(tier.required_points), benefit: tier.benefit.trim(), is_active: tier.is_active, sort_order: Number(tier.sort_order) };
+    const { data, error: updateError } = await supabase.from("club_tiers").update(updates).eq("id", tier.id).select("id, name, required_points, benefit, is_active, sort_order").single();
+    if (updateError) setError("Club tier could not be saved. Each tier needs a unique points threshold."); else { setClubTiers((current) => current.map((item) => item.id === tier.id ? data : item).sort((a, b) => a.sort_order - b.sort_order)); showSaveSuccess(`${data.name} tier saved.`); }
+    setSavingId("");
+  }
+
   if (authLoading) return <div className="flex min-h-[60vh] items-center justify-center text-sm text-stone-500">Loading admin dashboard…</div>;
   if (!user || user.role !== "admin") return <Navigate to="/" replace />;
 
@@ -316,14 +351,17 @@ export default function AdminPage() {
     <ProductCategoryContext.Provider value={availableProductCategories}>
     <div className="min-h-screen bg-[#f6f6f3] px-4 py-6 dark:bg-stone-950 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        <header className="relative overflow-hidden rounded-[2rem] bg-stone-950 px-6 py-7 text-white shadow-xl shadow-stone-900/10 sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" /><div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" /><div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-300">DorisWare operations</p><h1 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">The store, at a glance.</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-300">Manage inventory, promotions, delivery, fulfilment, and sales performance from one focused workspace.</p></div><button type="button" onClick={loadDashboard} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-900 shadow-lg transition hover:bg-emerald-50"><RefreshCw size={16} /> Refresh data</button></div><nav className="relative mt-7 flex gap-2 overflow-x-auto pb-1" aria-label="Admin sections">{[["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["delivery", "Delivery"], ["promotions", "Promotions"], ["contact", "Contact & location"], ["inbox", `Inbox${supportMessages.filter((message) => message.status === "new").length ? ` (${supportMessages.filter((message) => message.status === "new").length})` : ""}`]].map(([id, label]) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeSection === id ? "bg-white text-stone-950 shadow-sm" : "bg-white/12 text-white hover:bg-white/20"}`}>{label}</button>)}</nav></header>
+        <header className="relative overflow-hidden rounded-[2rem] bg-stone-950 px-6 py-7 text-white shadow-xl shadow-stone-900/10 sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" /><div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" /><div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-300">DorisWare operations</p><h1 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">The store, at a glance.</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-300">Manage inventory, promotions, delivery, fulfilment, and sales performance from one focused workspace.</p></div><button type="button" onClick={loadDashboard} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-900 shadow-lg transition hover:bg-emerald-50"><RefreshCw size={16} /> Refresh data</button></div><nav className="relative mt-7 flex gap-2 overflow-x-auto pb-1" aria-label="Admin sections">{[["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["delivery", "Delivery"], ["promotions", "Promotions"], ["club", "DorisWare Club"], ["contact", "Contact & location"], ["inbox", `Inbox${supportMessages.filter((message) => message.status === "new").length ? ` (${supportMessages.filter((message) => message.status === "new").length})` : ""}`]].map(([id, label]) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeSection === id ? "bg-white text-stone-950 shadow-sm" : "bg-white/12 text-white hover:bg-white/20"}`}>{label}</button>)}</nav></header>
 
         {error && <p role="alert" className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
+        {successMessage && <div role="status" className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-xl motion-safe:animate-pulse"><CheckCircle2 size={18} /> {successMessage}</div>}
 
         {activeSection === "contact" && <div className="mt-4 rounded-2xl border border-dashed border-sky-300 bg-sky-50/60 px-5 py-4 text-sm text-sky-950 dark:border-sky-800 dark:bg-sky-950/20 dark:text-sky-100"><p className="font-semibold">Adding the Google Maps link</p><ol className="mt-2 list-decimal space-y-1 pl-5 text-sky-900/80 dark:text-sky-100/80"><li>Open Google Maps and find your store.</li><li>Choose <strong>Share</strong> and copy its link.</li><li>Paste it into the directions field, save, then use <strong>Test directions</strong>.</li></ol></div>}
 
         {contactSettings && <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-sky-700 dark:text-sky-400">Storefront details</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Contact & location</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">These values appear on the public Contact page. Paste a Google Maps directions link so customers can navigate there instantly.</p></div><form onSubmit={saveContactSettings} className="mt-5 grid gap-4 sm:grid-cols-2"><AdminField label="Public email" type="email" value={contactSettings.email} onChange={(value) => setContactSettings({ ...contactSettings, email: value })} required /><AdminField label="Phone number" type="tel" value={contactSettings.phone} onChange={(value) => setContactSettings({ ...contactSettings, phone: value })} required /><AdminField label="WhatsApp number (country code, digits only)" value={contactSettings.whatsapp_number} onChange={(value) => setContactSettings({ ...contactSettings, whatsapp_number: value })} required /><AdminField label="Location label" value={contactSettings.location_label} onChange={(value) => setContactSettings({ ...contactSettings, location_label: value })} required /><AdminField label="Google Maps directions URL" type="url" value={contactSettings.directions_url} onChange={(value) => setContactSettings({ ...contactSettings, directions_url: value })} className="sm:col-span-2" required /><label className="text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2">Support hours<textarea required value={contactSettings.support_hours} onChange={(event) => setContactSettings({ ...contactSettings, support_hours: event.target.value })} rows="4" className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-sky-600 dark:border-stone-700 dark:bg-stone-800" /></label><button type="submit" disabled={savingId === "contact-settings"} className="sm:col-span-2 rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">{savingId === "contact-settings" ? "Saving contact details…" : "Save contact details"}</button></form></section>}
 
+
+        {clubSettings && <section className="mt-6 rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-950/60 dark:bg-stone-900 sm:p-6"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">Customer loyalty</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">DorisWare Club</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">These rules are applied securely when Paystack confirms a payment. Changes affect future paid orders only.</p></div><form onSubmit={saveClubSettings} className="mt-5 grid gap-4 rounded-2xl bg-emerald-50/70 p-4 dark:bg-emerald-950/15 sm:grid-cols-2"><AdminField label="Points per ₵1 spent" type="number" min="0" max="100" step="0.01" value={clubSettings.points_per_ghs} onChange={(value) => setClubSettings({ ...clubSettings, points_per_ghs: value })} required /><label className="flex items-center gap-2 self-end pb-2 text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={clubSettings.include_delivery_in_points} onChange={(event) => setClubSettings({ ...clubSettings, include_delivery_in_points: event.target.checked })} className="h-4 w-4 accent-emerald-600" /> Include delivery fees when awarding points</label><label className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2"><input type="checkbox" checked={clubSettings.is_active} onChange={(event) => setClubSettings({ ...clubSettings, is_active: event.target.checked })} className="h-4 w-4 accent-emerald-600" /> DorisWare Club is active</label><button type="submit" disabled={savingId === "club-settings"} className="sm:col-span-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">{savingId === "club-settings" ? "Saving Club settings…" : "Save Club settings"}</button></form><div className="mt-6"><h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Membership tiers</h3><div className="mt-3 grid gap-4 lg:grid-cols-3">{clubTiers.map((tier) => <form key={tier.id} onSubmit={(event) => saveClubTier(event, tier)} className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><AdminField label="Tier name" value={tier.name} onChange={(value) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, name: value } : item))} required /><AdminField label="Points required" type="number" min="0" step="1" value={tier.required_points} onChange={(value) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, required_points: value } : item))} required /><label className="mt-3 block text-sm font-medium text-stone-700 dark:text-stone-300">Member message<textarea value={tier.benefit} onChange={(event) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, benefit: event.target.value } : item))} rows="3" className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600 dark:border-stone-700 dark:bg-stone-800" /></label><label className="mt-3 flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={tier.is_active} onChange={(event) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, is_active: event.target.checked } : item))} className="h-4 w-4 accent-emerald-600" /> Available tier</label><button type="submit" disabled={savingId === `club-tier-${tier.id}`} className="mt-4 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">{savingId === `club-tier-${tier.id}` ? "Saving…" : "Save tier"}</button></form>)}</div></div></section>}
 
         {activeSection === "inbox" && <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-stone-800 dark:bg-stone-900"><span className="px-2 text-xs font-bold uppercase tracking-[.12em] text-stone-400">Show</span>{[["all", "All"], ["support", "Support"], ["suggestion", "Suggestions"]].map(([filter, label]) => <button key={filter} type="button" onClick={() => setInboxFilter(filter)} className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${inboxFilter === filter ? "bg-emerald-700 text-white" : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"}`}>{label}{filter !== "all" ? ` (${allCustomerMessages.filter((message) => (message.message_type ?? "support") === filter).length})` : ` (${allCustomerMessages.length})`}</button>)}</div>}
 

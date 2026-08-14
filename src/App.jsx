@@ -18,6 +18,7 @@ import ProfilePage from "./pages/Profilepage";
 import AdminPage from "./pages/Adminpage";
 import ConnectionStatus from "./components/Connectionstatus";
 import StoreAssistant from "./components/StoreAssistant";
+import BackToTop from "./components/Backtotop";
 
 export default function App() {
   const location = useLocation();
@@ -57,6 +58,7 @@ export default function App() {
       </main>
 
       {showFooter && <Footer storeName="DorisWare" contactEmail="info@dorisware.com" />}
+      {!isAuthPage && <BackToTop />}
       {showAssistant && <StoreAssistant />}
     </div>
   );
