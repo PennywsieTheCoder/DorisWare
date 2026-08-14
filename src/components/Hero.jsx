@@ -80,7 +80,7 @@ export default function Hero() {
           <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-4 text-xs text-stone-300">
             <div className="flex items-center gap-2">
               <Truck size={15} className="text-amber-400" />
-              <span>Free Delivery in Accra over ₵50</span>
+              <span>Delivery across Ghana · options shown at checkout</span>
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck size={15} className="text-emerald-400" />

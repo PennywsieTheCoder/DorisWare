@@ -16,8 +16,6 @@ import {
   Plus,
   Trash2,
   ShieldCheck,
-  Sun,
-  Moon,
   Bell,
   X,
   Printer,
@@ -28,9 +26,10 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/Authcontext";
 import { useCart } from "../context/Cartcontext";
-import { useTheme } from "../context/Themecontext ";
 import { useProducts } from "../hooks/useProducts";
 import ProductCard from "../components/Productcard";
+import { supabase } from "../lib/supabase";
+import TurnstileWidget from "../components/TurnstileWidget";
 
 const inputClass =
   "mt-1.5 w-full rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-2.5 text-stone-900 outline-none transition focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-100 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-100 dark:focus:border-green-500 dark:focus:ring-green-950/50";
@@ -50,6 +49,22 @@ const imageUrl = (path) => {
   return `${import.meta.env.BASE_URL}${path.slice(1)}`;
 };
 
+const mfaQrSource = (qrCode) => qrCode?.startsWith("data:image/")
+  ? qrCode
+  : `data:image/svg+xml;utf8,${encodeURIComponent(qrCode ?? "")}`;
+
+const fallbackClubTiers = [
+  { id: "culinary-enthusiast", name: "Culinary Enthusiast", required_points: 0, benefit: "Start earning points on paid orders." },
+  { id: "home-chef", name: "Home Chef", required_points: 500, benefit: "Recognition for your growing collection." },
+  { id: "master-chef", name: "Master Chef", required_points: 1500, benefit: "Top-tier DorisWare Club status." },
+];
+
+function getClubTier(points, tiers) {
+  const sorted = [...tiers].sort((a, b) => a.required_points - b.required_points);
+  const currentIndex = Math.max(0, sorted.findLastIndex((tier) => points >= tier.required_points));
+  return { current: sorted[currentIndex], next: sorted[currentIndex + 1] ?? null };
+}
+
 export default function ProfilePage() {
   const {
     user,
@@ -63,7 +78,6 @@ export default function ProfilePage() {
     addAddress,
   } = useAuth();
   const { addToCart } = useCart();
-  const { theme, toggleTheme } = useTheme();
   const { products: currentProducts } = useProducts();
   const location = useLocation();
   const fileInput = useRef(null);
@@ -75,6 +89,17 @@ export default function ProfilePage() {
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [orderStatusFilter, setOrderStatusFilter] = useState("all");
+  const [clubSettings, setClubSettings] = useState(null);
+  const [clubTiers, setClubTiers] = useState(fallbackClubTiers);
+  const [mfaFactors, setMfaFactors] = useState([]);
+  const [mfaEnrollment, setMfaEnrollment] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaError, setMfaError] = useState("");
+  const [resetSending, setResetSending] = useState(false);
+  const [resetCaptchaToken, setResetCaptchaToken] = useState("");
+  const [showResetCaptcha, setShowResetCaptcha] = useState(false);
+  const [resetCaptchaReset, setResetCaptchaReset] = useState(0);
 
   const [form, setForm] = useState(() => ({
     name: user?.name ?? "",
@@ -95,8 +120,90 @@ export default function ProfilePage() {
     isDefault: false,
   });
 
+  useEffect(() => {
+    if (!user?.id) return;
+    setForm({
+      name: user.name ?? "",
+      email: user.email ?? "",
+      phone: user.phone ?? "",
+      birthday: user.birthday ?? "",
+      cookingStyle: user.cookingStyle ?? "Cast Iron & Heavy Dutch Ovens",
+    });
+    setAddressForm((current) => ({
+      ...current,
+      recipient: current.recipient || user.name || "",
+      phone: current.phone || user.phone || "",
+    }));
+  }, [user?.id]);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("club_settings").select("is_active, points_per_ghs, include_delivery_in_points").eq("id", true).maybeSingle(),
+      supabase.from("club_tiers").select("id, name, required_points, benefit").eq("is_active", true).order("required_points"),
+    ]).then(([settingsResult, tiersResult]) => {
+      if (!settingsResult.error) setClubSettings(settingsResult.data);
+      if (!tiersResult.error && tiersResult.data?.length) setClubTiers(tiersResult.data);
+    });
+  }, []);
+
+  async function loadMfaFactors() {
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (!error) setMfaFactors(data?.totp ?? []);
+  }
+
+  useEffect(() => { if (activeTab === "settings") loadMfaFactors(); }, [activeTab]);
+
+  async function beginMfaEnrollment() {
+    setMfaBusy(true); setMfaError("");
+    const { data: existingFactors } = await supabase.auth.mfa.listFactors();
+    const incompleteFactor = existingFactors?.totp?.find((factor) => factor.status === "unverified" && factor.friendly_name === "DorisWare Authenticator");
+    if (incompleteFactor) await supabase.auth.mfa.unenroll({ factorId: incompleteFactor.id });
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: "DorisWare Authenticator" });
+    if (error || !data?.totp?.qr_code) setMfaError(error?.message || "MFA setup could not be started. Enable TOTP MFA in Supabase Auth settings, then try again."); else setMfaEnrollment(data);
+    setMfaBusy(false);
+  }
+
+  async function verifyMfaEnrollment() {
+    if (!mfaEnrollment || mfaCode.length !== 6) return;
+    setMfaBusy(true);
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: mfaEnrollment.id, code: mfaCode });
+    if (error) showToast("That authenticator code was not accepted.");
+    else { setMfaEnrollment(null); setMfaCode(""); await loadMfaFactors(); showToast("Two-step verification enabled."); }
+    setMfaBusy(false);
+  }
+
+  async function removeMfaFactor(factorId) {
+    setMfaBusy(true);
+    const { error } = await supabase.auth.mfa.unenroll({ factorId });
+    if (error) showToast(error.message); else { await loadMfaFactors(); showToast("Two-step verification removed."); }
+    setMfaBusy(false);
+  }
+
+  async function sendPasswordReset() {
+    if (!resetCaptchaToken) { setShowResetCaptcha(true); showToast("Complete the security check, then send the reset link."); return; }
+    setResetSending(true);
+    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}?reset-password=update`;
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, { redirectTo, captchaToken: resetCaptchaToken });
+    showToast(error ? (error.message || "Password reset email could not be sent.") : "Password reset link sent to your email.");
+    setResetCaptchaToken(""); setResetCaptchaReset((value) => value + 1);
+    setResetSending(false);
+  }
+
   if (authLoading) {
-    return <div className="flex min-h-[50vh] items-center justify-center text-sm text-stone-500">Loading profile…</div>;
+    return (
+      <div className="min-h-screen bg-[#f6f6f3] px-4 py-5 dark:bg-stone-950 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl animate-pulse">
+          <div className="rounded-[2rem] bg-stone-950 px-6 py-9 sm:px-8">
+            <div className="flex items-center gap-5">
+              <div className="h-24 w-24 rounded-full bg-white/10" />
+              <div className="space-y-3"><div className="h-4 w-28 rounded-full bg-emerald-300/25" /><div className="h-9 w-52 rounded-xl bg-white/15" /><div className="h-3 w-40 rounded-full bg-white/10" /></div>
+            </div>
+            <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-20 rounded-2xl bg-white/10" />)}</div>
+          </div>
+          <div className="mt-7 grid gap-8 lg:grid-cols-[1.1fr_.9fr]"><div className="h-96 rounded-3xl bg-white dark:bg-stone-900" /><div className="h-64 rounded-3xl bg-white dark:bg-stone-900" /></div>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
@@ -158,8 +265,18 @@ export default function ProfilePage() {
   const favorites = (user.favorites ?? []).map((favorite) => currentProducts.find((product) => product.id === favorite.id) ?? favorite);
   const orders = user.orders ?? [];
   const addresses = user.addresses ?? [];
-  const points = user.points ?? 350;
-  const tier = user.tier ?? "Culinary Enthusiast";
+  const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0];
+  const latestOrder = orders[0];
+  const memberSince = user.memberSince ? new Date(user.memberSince).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : "Recently joined";
+  const points = user.points ?? 0;
+  const clubTier = getClubTier(points, clubTiers);
+  const tier = clubTier.current.name;
+  const clubVisible = Boolean(clubSettings?.is_active);
+  const progressStart = clubTier.current.required_points;
+  const progressTarget = clubTier.next?.required_points ?? progressStart;
+  const progressPercent = clubTier.next
+    ? Math.min(100, ((points - progressStart) / (progressTarget - progressStart)) * 100)
+    : 100;
 
   const filteredOrders = orders.filter((o) => {
     if (orderStatusFilter === "in-transit") return o.status === "In Transit" || o.status === "Processing";
@@ -218,10 +335,10 @@ export default function ProfilePage() {
 
               {/* User Bio Details */}
               <div className="text-center sm:text-left">
-                <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200 border border-emerald-400/30">
+                {clubVisible && <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-semibold text-emerald-200 border border-emerald-400/30">
                   <Sparkles size={13} />
                   <span>{tier}</span>
-                </div>
+                </div>}
                 <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-white sm:text-4xl">
                   {user.name || "DorisWare Member"}
                 </h1>
@@ -230,9 +347,9 @@ export default function ProfilePage() {
                   <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     <ShieldCheck size={14} className="text-emerald-400" /> Verified Member
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                  {clubVisible && <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
                     <Award size={14} className="text-amber-400" /> {points} Rewards Points
-                  </span>
+                  </span>}
                 </div>
               </div>
             </div>
@@ -248,7 +365,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Quick Counter Grid */}
-          <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className={`mt-9 grid gap-3 ${clubVisible ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
             <StatCard
               icon={<Package className="text-emerald-400" />}
               label="Orders Placed"
@@ -267,12 +384,12 @@ export default function ProfilePage() {
               value={addresses.length}
               onClick={() => setActiveTab("addresses")}
             />
-            <StatCard
+            {clubVisible && <StatCard
               icon={<Award className="text-cyan-400" />}
               label="Rewards Balance"
               value={`${points} pts`}
               onClick={() => setActiveTab("overview")}
-            />
+            />}
           </div>
         </div>
       </div>
@@ -317,7 +434,7 @@ export default function ProfilePage() {
             active={activeTab === "settings"}
             onClick={() => setActiveTab("settings")}
             icon={<Bell size={18} />}
-            label="Settings & Theme"
+            label="Settings"
           />
         </div>
 
@@ -420,9 +537,9 @@ export default function ProfilePage() {
             </form>
 
             {/* Side Highlights Column */}
-            <div className="space-y-6">
+            <div className={clubVisible ? "space-y-6" : "lg:h-full"}>
               {/* Membership Pass Card */}
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-900 via-stone-850 to-stone-950 p-6 text-white shadow-xl dark:border dark:border-stone-800">
+              {clubVisible && <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-900 via-stone-850 to-stone-950 p-6 text-white shadow-xl dark:border dark:border-stone-800">
                 <div className="flex items-center justify-between">
                   <span className="font-serif text-lg font-bold tracking-wider text-emerald-400">
                     DORISWARE CLUB
@@ -436,40 +553,46 @@ export default function ProfilePage() {
                   <h3 className="mt-1 text-2xl font-bold text-white">{tier}</h3>
                   <div className="mt-4">
                     <div className="flex justify-between text-xs text-stone-300 mb-1.5">
-                      <span>{points} / 500 PTS</span>
-                      <span className="font-semibold text-emerald-400">Master Chef Tier next</span>
+                      <span>{clubTier.next ? `${points} / ${progressTarget} PTS` : `${points} PTS`}</span>
+                      <span className="font-semibold text-emerald-400">
+                        {clubTier.next ? `${progressTarget - points} pts to next tier` : "Top tier reached"}
+                      </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-stone-800 overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500"
-                        style={{ width: `${Math.min(100, (points / 500) * 100)}%` }}
+                        style={{ width: `${progressPercent}%` }}
                       />
                     </div>
                   </div>
                 </div>
                 <div className="mt-6 pt-4 border-t border-stone-800 flex items-center justify-between text-xs text-stone-400">
-                  <span>Free Shipping on Orders ₵50+</span>
-                  <span className="text-emerald-400 font-medium">Active Perk ✓</span>
+                  <span>{clubSettings?.is_active ? `Earn ${clubSettings.points_per_ghs} point${Number(clubSettings.points_per_ghs) === 1 ? "" : "s"} per ₵1` : "Club rewards are paused"}</span>
+                  <span className="text-emerald-400 font-medium">{clubSettings?.include_delivery_in_points ? "Delivery included" : "Paid orders only"}</span>
                 </div>
-              </div>
+              </div>}
 
               {/* Quick Links / Recent Activity */}
-              <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
+              <div className={`rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900 ${clubVisible ? "" : "lg:h-full"}`}>
                 <h3 className="font-bold text-stone-900 dark:text-stone-100 mb-4 flex items-center gap-2">
                   <Clock size={18} className="text-emerald-600" /> Account Activity
                 </h3>
                 <div className="space-y-3 text-xs text-stone-600 dark:text-stone-300">
-                  <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
-                    <span>Member Account Created</span>
-                    <span className="text-stone-400">Active</span>
+                  <div className="flex items-center justify-between gap-4 py-2 border-b border-stone-100 dark:border-stone-800">
+                    <span>Member since</span>
+                    <span className="text-stone-400">{memberSince}</span>
                   </div>
-                  <div className="flex items-center justify-between py-2 border-b border-stone-100 dark:border-stone-800">
-                    <span>Default Address Set</span>
-                    <span className="text-emerald-600 font-medium">Accra, Ghana</span>
+                  <div className="flex items-center justify-between gap-4 py-2 border-b border-stone-100 dark:border-stone-800">
+                    <span>Default delivery address</span>
+                    <span className="max-w-[11rem] truncate text-right font-medium text-emerald-600">{defaultAddress ? `${defaultAddress.city}, ${defaultAddress.region}` : "Not set"}</span>
                   </div>
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between gap-4 py-2 border-b border-stone-100 dark:border-stone-800">
                     <span>Favorites Saved</span>
                     <span className="text-rose-500 font-medium">{favorites.length} Items</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 py-2">
+                    <span>Latest order</span>
+                    <span className="max-w-[11rem] truncate text-right font-medium text-stone-500 dark:text-stone-400">{latestOrder ? `${latestOrder.id} · ${latestOrder.status}` : "No orders yet"}</span>
                   </div>
                 </div>
               </div>
@@ -760,40 +883,6 @@ export default function ProfilePage() {
         {/* Tab 5: Settings */}
         {activeTab === "settings" && (
           <div className="mt-8 max-w-3xl space-y-8">
-            {/* Theme Preference */}
-            <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
-              <h3 className="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                {theme === "dark" ? <Moon className="text-amber-400" size={20} /> : <Sun className="text-amber-500" size={20} />}
-                Appearance & Visual Theme
-              </h3>
-              <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                Choose your preferred interface color mode.
-              </p>
-
-              <div className="mt-5 grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => theme !== "light" && toggleTheme()}
-                  className={`flex items-center justify-center gap-3 rounded-2xl border p-4 font-semibold text-sm transition ${
-                    theme === "light"
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
-                      : "border-stone-200 text-stone-700 hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300"
-                  }`}
-                >
-                  <Sun size={18} /> Light Mode
-                </button>
-                <button
-                  onClick={() => theme !== "dark" && toggleTheme()}
-                  className={`flex items-center justify-center gap-3 rounded-2xl border p-4 font-semibold text-sm transition ${
-                    theme === "dark"
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
-                      : "border-stone-200 text-stone-700 hover:bg-stone-50 dark:border-stone-800 dark:text-stone-300"
-                  }`}
-                >
-                  <Moon size={18} /> Dark Mode
-                </button>
-              </div>
-            </div>
-
             {/* Notification Toggles */}
             <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
               <h3 className="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
@@ -837,6 +926,8 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900"><h3 className="flex items-center gap-2 font-bold text-stone-900 dark:text-stone-100"><ShieldCheck className="text-emerald-600" size={20} /> Two-step verification</h3><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Use an authenticator app such as Google Authenticator, Authy, or Microsoft Authenticator.</p>{mfaError && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-300">{mfaError}</p>}{mfaEnrollment ? <div className="mt-5 space-y-4"><img src={mfaQrSource(mfaEnrollment.totp.qr_code)} alt="Scan this QR code with your authenticator app" className="h-44 w-44 rounded-xl bg-white p-2" /><p className="break-all rounded-xl bg-stone-100 p-3 font-mono text-xs dark:bg-stone-800">{mfaEnrollment.totp.secret}</p><input value={mfaCode} onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="6-digit code" className={inputClass} /><div className="flex gap-3"><button type="button" onClick={verifyMfaEnrollment} disabled={mfaBusy || mfaCode.length !== 6} className="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{mfaBusy ? "Verifying…" : "Verify and enable"}</button><button type="button" onClick={() => setMfaEnrollment(null)} className="text-sm font-semibold text-stone-500">Cancel</button></div></div> : mfaFactors.some((factor) => factor.status === "verified") ? <div className="mt-5 flex items-center justify-between rounded-2xl bg-emerald-50 p-4 text-sm dark:bg-emerald-950/30"><span className="font-semibold text-emerald-800 dark:text-emerald-200">Authenticator app enabled</span><button type="button" disabled={mfaBusy} onClick={() => removeMfaFactor(mfaFactors.find((factor) => factor.status === "verified").id)} className="font-semibold text-rose-600 disabled:opacity-60">Disable</button></div> : <button type="button" disabled={mfaBusy} onClick={beginMfaEnrollment} className="mt-5 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{mfaBusy ? "Preparing…" : "Set up authenticator app"}</button>}</div>
+
             {/* Security Summary */}
             <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
               <h3 className="font-bold text-stone-900 dark:text-stone-100 flex items-center gap-2">
@@ -851,12 +942,14 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between text-xs py-2">
                 <span className="text-stone-600 dark:text-stone-400">Account Password</span>
                 <button
-                  onClick={() => showToast("Password reset link sent to your email!")}
-                  className="font-bold text-emerald-700 hover:underline dark:text-emerald-400"
+                  onClick={sendPasswordReset}
+                  disabled={resetSending}
+                  className="font-bold text-emerald-700 hover:underline disabled:opacity-60 dark:text-emerald-400"
                 >
-                  Send Reset Link
+                  {resetSending ? "Sending…" : "Send Reset Link"}
                 </button>
               </div>
+              {showResetCaptcha && <div className="mt-3 border-t border-stone-100 pt-4 dark:border-stone-800"><p className="mb-2 text-xs text-stone-500 dark:text-stone-400">Complete this security check before requesting the email.</p><TurnstileWidget onTokenChange={setResetCaptchaToken} resetSignal={resetCaptchaReset} /></div>}
             </div>
           </div>
         )}

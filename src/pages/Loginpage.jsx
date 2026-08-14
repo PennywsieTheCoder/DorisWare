@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/Authcontext";
 import TurnstileWidget from "../components/TurnstileWidget";
+import { supabase } from "../lib/supabase";
 
 /* ─── Shared input style ──────────────────────────────────────────────────── */
 export const inputClass =
@@ -177,7 +178,7 @@ export function GoogleMark() {
 /* ─── AuthShell (shared by Login & Signup) ───────────────────────────────── */
 export function AuthShell({ title, description, children, bottomLink }) {
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-stone-50 dark:bg-stone-950">
+    <div className="relative flex min-h-screen overflow-x-hidden bg-stone-50 dark:bg-stone-950">
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -191,18 +192,10 @@ export function AuthShell({ title, description, children, bottomLink }) {
       <BrandPanel />
 
       {/* Right: the form */}
-      <div className="relative flex flex-1 items-center justify-center px-4 pb-6 pt-24 sm:px-5 sm:py-10 lg:px-10 xl:px-16">
+      <div className="relative flex flex-1 items-start justify-center px-4 pb-8 pt-24 sm:items-center sm:px-5 sm:py-10 lg:px-10 xl:px-16">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-br from-emerald-800 via-green-700 to-emerald-600 lg:hidden" />
         <div className="pointer-events-none absolute -right-16 top-3 h-40 w-40 rounded-full border border-white/15 lg:hidden" />
-        <div className="relative w-full max-w-md rounded-[1.75rem] bg-white/95 px-5 py-6 shadow-[0_18px_48px_-24px_rgba(20,83,45,.5)] backdrop-blur sm:px-7 sm:py-8 dark:bg-stone-900/95 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none">
-          {/* Mobile logo */}
-          <div className="-mt-14 mb-9 flex items-center gap-3 lg:mt-0 lg:hidden">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/30 bg-white/15 text-white shadow-lg backdrop-blur">
-              <ChefHat className="h-5 w-5" />
-            </div>
-            <div><span className="block text-xl font-bold text-white">DorisWare</span><span className="text-xs text-emerald-100">Cook with confidence</span></div>
-          </div>
-
+        <div className="relative z-10 w-full max-w-md rounded-[1.75rem] bg-white/95 px-5 py-6 shadow-[0_18px_48px_-24px_rgba(20,83,45,.5)] backdrop-blur sm:px-7 sm:py-8 dark:bg-stone-900/95 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none">
           {/* Heading */}
           <div className="mb-7">
             <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-white">
@@ -241,6 +234,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
   const [captchaReset, setCaptchaReset] = useState(0);
+  const [mfaFactor, setMfaFactor] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
   const destination = location.state?.from || "/";
   const successMessage = location.state?.message;
 
@@ -252,6 +247,9 @@ export default function LoginPage() {
     try {
       const { error: signInError } = await signIn({ ...form, remember, captchaToken });
       if (signInError) throw signInError;
+      const { data: factorData } = await supabase.auth.mfa.listFactors();
+      const verifiedFactor = factorData?.totp?.find((factor) => factor.status === "verified");
+      if (verifiedFactor) { setMfaFactor(verifiedFactor); return; }
       navigate(destination, { replace: true });
     } catch (signInError) {
       setError(signInError.message || "Incorrect email or password. Please try again.");
@@ -259,6 +257,13 @@ export default function LoginPage() {
       setCaptchaReset((value) => value + 1);
       setLoading(false);
     }
+  }
+
+  async function verifyMfaLogin(event) {
+    event.preventDefault(); setError(""); setLoading(true);
+    const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId: mfaFactor.id, code: mfaCode });
+    if (verifyError) setError("That authenticator code was not accepted."); else navigate(destination, { replace: true });
+    setLoading(false);
   }
 
   async function handleGoogle() {
@@ -293,6 +298,7 @@ export default function LoginPage() {
         </>
       }
     >
+      {mfaFactor ? <form onSubmit={verifyMfaLogin} className="space-y-4"><div className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"><p className="font-semibold">Enter your authenticator code</p><p className="mt-1 text-xs">Open your authenticator app and enter the current six-digit code.</p></div><input autoFocus value={mfaCode} onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="000000" className={`${inputClass} text-center text-xl tracking-[.35em]`} /><button type="submit" disabled={loading || mfaCode.length !== 6} className="w-full rounded-2xl bg-emerald-700 py-3.5 text-sm font-semibold text-white disabled:opacity-60">{loading ? "Verifying…" : "Verify and continue"}</button>{error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">{error}</p>}</form> : <>
       {/* Google button */}
       <button
         type="button"
@@ -359,7 +365,6 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
-              tabIndex={-1}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
@@ -447,6 +452,7 @@ export default function LoginPage() {
         <LockKeyhole className="h-3 w-3" />
         Your data is encrypted and never shared
       </p>
+      </>}
     </AuthShell>
   );
 }

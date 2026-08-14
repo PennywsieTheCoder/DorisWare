@@ -8,6 +8,37 @@ import { useProducts } from "../hooks/useProducts";
 import { supabase } from "../lib/supabase";
 
 const money = (value) => `₵${value.toFixed(2)}`;
+const REVIEW_PAGE_SIZE = 5;
+
+const cookingStyleCategories = {
+  "Cast Iron & Heavy Dutch Ovens": ["Cookware"],
+  "Baking & Pastry Arts": ["Bakeware"],
+  "Quick Stir Fry & Asian Utensils": ["Utensils", "Appliances"],
+  "Gourmet Fine Dining & Plating": ["Cutlery", "Cookware"],
+  "All-round Home Cooking": [],
+};
+
+function getRecommendations(products, currentProduct, user) {
+  const preferredCategories = cookingStyleCategories[user?.cookingStyle] ?? [];
+  const favoriteIds = new Set(user?.favorites?.map((favorite) => favorite.id) ?? []);
+  const purchasedIds = new Set(user?.orders?.flatMap((order) => order.items?.map((item) => item.id) ?? []) ?? []);
+  const purchasedCategories = new Set(products.filter((item) => purchasedIds.has(item.id)).map((item) => item.category));
+
+  return products
+    .filter((item) => item.id !== currentProduct.id && Number(item.quantity ?? 0) > 0)
+    .map((item, index) => ({
+      item,
+      index,
+      score: (preferredCategories.includes(item.category) ? 6 : 0)
+        + (item.category === currentProduct.category ? 4 : 0)
+        + (purchasedCategories.has(item.category) ? 3 : 0)
+        + (favoriteIds.has(item.id) ? 2 : 0)
+        + (item.featured ? 1 : 0),
+    }))
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .slice(0, 3)
+    .map(({ item }) => item);
+}
 
 export default function ProductPage() {
   const { id } = useParams();
@@ -20,6 +51,8 @@ export default function ProductPage() {
   const [imageIndex, setImageIndex] = useState(0);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: "", body: "" });
   const [reviewMessage, setReviewMessage] = useState("");
 
@@ -27,9 +60,11 @@ export default function ProductPage() {
     let active = true;
     async function loadReviews() {
       setReviewsLoading(true);
-      const { data, error } = await supabase.from("product_reviews").select("id, user_id, rating, title, body, is_visible, created_at").eq("product_id", id).order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_product_reviews", { p_product_id: id, p_limit: REVIEW_PAGE_SIZE + 1, p_offset: 0 });
       if (active) {
-        setReviews(error ? [] : data ?? []);
+        const reviewPage = error ? [] : data ?? [];
+        setReviews(reviewPage.slice(0, REVIEW_PAGE_SIZE));
+        setHasMoreReviews(reviewPage.length > REVIEW_PAGE_SIZE);
         setReviewsLoading(false);
       }
     }
@@ -44,7 +79,23 @@ export default function ProductPage() {
   const isOutOfStock = stock <= 0;
   const isLowStock = stock > 0 && stock < 5;
   const originalPrice = product.originalPrice;
-  const recommendations = products.filter((item) => item.id !== product.id).slice(0, 3);
+  const recommendations = getRecommendations(products, product, user);
+
+  async function loadMoreReviews() {
+    if (loadingMoreReviews || !hasMoreReviews) return;
+    setLoadingMoreReviews(true);
+    const { data, error } = await supabase.rpc("get_product_reviews", {
+      p_product_id: id,
+      p_limit: REVIEW_PAGE_SIZE + 1,
+      p_offset: reviews.length,
+    });
+    if (!error) {
+      const reviewPage = data ?? [];
+      setReviews((current) => [...current, ...reviewPage.slice(0, REVIEW_PAGE_SIZE)]);
+      setHasMoreReviews(reviewPage.length > REVIEW_PAGE_SIZE);
+    }
+    setLoadingMoreReviews(false);
+  }
 
   function favorite() {
     if (!user) { navigate("/login", { state: { from: `/product/${id}` } }); return; }
@@ -86,7 +137,7 @@ export default function ProductPage() {
             <p className="mt-5 text-center text-xs text-stone-500 dark:text-stone-400">Secure payment is handled at checkout. Free delivery options will be shown before payment.</p>
           </section>
         </div>
-        <ReviewSection reviews={reviews} loading={reviewsLoading} canReview={canReview} ownReview={ownReview} form={reviewForm} setForm={setReviewForm} message={reviewMessage} onSubmit={submitReview} onLogin={() => navigate("/login", { state: { from: `/product/${id}` } })} signedIn={Boolean(user)} />
+        <ReviewSection reviews={reviews} loading={reviewsLoading} hasMore={hasMoreReviews} loadingMore={loadingMoreReviews} onLoadMore={loadMoreReviews} canReview={canReview} ownReview={ownReview} form={reviewForm} setForm={setReviewForm} message={reviewMessage} onSubmit={submitReview} onLogin={() => navigate("/login", { state: { from: `/product/${id}` } })} signedIn={Boolean(user)} />
       </main>
       <section className="border-t border-stone-200 bg-white py-16 dark:border-stone-800 dark:bg-stone-900 sm:py-20"><div className="mx-auto max-w-6xl px-4 sm:px-6"><div className="mb-8 flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-600">Keep exploring</p><h2 className="mt-2 font-serif text-3xl font-semibold text-stone-900 dark:text-stone-100">You may also like</h2></div><button type="button" onClick={() => navigate("/shop")} className="text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400">View all products →</button></div><div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6">{recommendations.map((item) => <ProductCard key={item.id} {...item} />)}</div></div></section>
     </div>
@@ -97,7 +148,11 @@ function Unavailable({ navigate }) { return <div className="flex min-h-[65vh] it
 function ProductLoading() { return <div className="mx-auto max-w-6xl animate-pulse px-4 py-8 sm:px-6 sm:py-12" aria-label="Loading product"><div className="mb-7 h-5 w-28 rounded bg-stone-200 dark:bg-stone-800" /><div className="grid gap-8 lg:grid-cols-[1.05fr_.95fr] lg:gap-14"><div className="min-h-[340px] rounded-[2rem] bg-stone-200 dark:bg-stone-800 sm:min-h-[500px]" /><div className="rounded-[2rem] bg-white p-8 shadow-sm dark:bg-stone-900"><div className="h-3 w-28 rounded bg-stone-200 dark:bg-stone-800" /><div className="mt-5 h-11 w-3/4 rounded bg-stone-200 dark:bg-stone-800" /><div className="mt-8 h-9 w-32 rounded bg-stone-200 dark:bg-stone-800" /><div className="mt-8 space-y-3"><div className="h-4 rounded bg-stone-200 dark:bg-stone-800" /><div className="h-4 w-5/6 rounded bg-stone-200 dark:bg-stone-800" /><div className="h-4 w-2/3 rounded bg-stone-200 dark:bg-stone-800" /></div><div className="mt-8 h-14 rounded-2xl bg-stone-200 dark:bg-stone-800" /></div></div></div>; }
 function Notice({ tone, text }) { const styles = { red: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300", amber: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300", green: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300" }; return <div className={`mt-6 flex items-start gap-3 rounded-2xl border p-4 text-sm ${styles[tone]}`}><AlertCircle size={18} /><p>{text}</p></div>; }
 
-function ReviewSection({ reviews, loading, canReview, ownReview, form, setForm, message, onSubmit, onLogin, signedIn }) {
+function ReviewSection({ reviews, loading, hasMore, loadingMore, onLoadMore, canReview, ownReview, form, setForm, message, onSubmit, onLogin, signedIn }) {
   const visibleReviews = reviews.filter((review) => review.is_visible);
-  return <section className="mt-12 border-t border-stone-200 pt-10 dark:border-stone-800"><div className={`grid gap-7 ${ownReview ? "" : "lg:grid-cols-[minmax(0,1fr)_340px]"}`}><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-600">Verified customer reviews</p><h2 className="mt-2 font-serif text-2xl font-semibold text-stone-900 dark:text-stone-100">What customers say</h2>{loading ? <p className="mt-5 text-sm text-stone-500">Loading reviews…</p> : visibleReviews.length ? <div className="mt-6 space-y-4">{visibleReviews.map((review) => <article key={review.id} className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900"><div className="flex items-center justify-between gap-3"><div className="flex text-amber-400">{Array.from({ length: 5 }, (_, index) => <Star key={index} size={15} fill={index < review.rating ? "currentColor" : "none"} className={index < review.rating ? "text-amber-400" : "text-stone-300 dark:text-stone-700"} />)}</div><span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Verified buyer</span></div>{review.title && <h3 className="mt-3 font-semibold text-stone-900 dark:text-stone-100">{review.title}</h3>}{review.body && <p className="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300">{review.body}</p>}<p className="mt-3 text-xs text-stone-400">{new Date(review.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p></article>)}</div> : <p className="mt-5 rounded-2xl border border-dashed border-stone-300 p-5 text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400">No approved reviews yet. The first verified customer review will appear here.</p>}</div>{!ownReview && <aside className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900"><h2 className="font-semibold text-stone-900 dark:text-stone-100">Share a review</h2>{!signedIn ? <><p className="mt-2 text-sm leading-6 text-stone-500 dark:text-stone-400">Sign in after delivery to review this purchase.</p><button type="button" onClick={onLogin} className="mt-5 w-full rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white dark:bg-emerald-600">Sign in to review</button></> : !canReview ? <p className="mt-3 text-sm leading-6 text-stone-500 dark:text-stone-400">Reviews unlock after this product has been paid for and marked delivered.</p> : <form className="mt-4 space-y-4" onSubmit={onSubmit}><label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Rating<select value={form.rating} onChange={(event) => setForm({ ...form, rating: event.target.value })} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800"><option value="5">5 — Excellent</option><option value="4">4 — Good</option><option value="3">3 — Average</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></label><label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Title <input maxLength="100" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800" /></label><label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Review <textarea required maxLength="1000" rows="4" value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800" /></label><button type="submit" className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">Submit for approval</button></form>}{message && <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">{message}</p>}</aside>}</div></section>;
+  const [hoverRating, setHoverRating] = useState(0);
+  const selectedRating = Number(form.rating);
+  const displayedRating = hoverRating || selectedRating;
+
+  return <section className="mt-12 border-t border-stone-200 pt-10 dark:border-stone-800"><div className={`grid gap-7 ${ownReview ? "" : "lg:grid-cols-[minmax(0,1fr)_340px]"}`}><div><p className="text-xs font-semibold uppercase tracking-[.18em] text-amber-600">Verified customer reviews</p><h2 className="mt-2 font-serif text-2xl font-semibold text-stone-900 dark:text-stone-100">What customers say</h2>{loading ? <p className="mt-5 text-sm text-stone-500">Loading reviews…</p> : visibleReviews.length ? <><div className="mt-6 space-y-4">{visibleReviews.map((review) => <article key={review.id} className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900"><div className="flex items-center justify-between gap-3"><div className="flex text-amber-400">{Array.from({ length: 5 }, (_, index) => <Star key={index} size={15} fill={index < review.rating ? "currentColor" : "none"} className={index < review.rating ? "text-amber-400" : "text-stone-300 dark:text-stone-700"} />)}</div><span className="text-xs font-medium text-emerald-700 dark:text-emerald-400">Verified buyer</span></div><p className="mt-3 text-sm font-semibold text-stone-900 dark:text-stone-100">{review.reviewer_name || "Verified customer"}</p>{review.title && <h3 className="mt-2 font-semibold text-stone-900 dark:text-stone-100">{review.title}</h3>}{review.body && <p className="mt-2 text-sm leading-6 text-stone-600 dark:text-stone-300">{review.body}</p>}<p className="mt-3 text-xs text-stone-400">{new Date(review.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p></article>)}</div>{hasMore && <button type="button" onClick={onLoadMore} disabled={loadingMore} className="mt-5 rounded-xl border border-stone-200 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-stone-700 dark:text-emerald-400 dark:hover:bg-emerald-950/30">{loadingMore ? "Loading more…" : "Load more reviews"}</button>}</> : <p className="mt-5 rounded-2xl border border-dashed border-stone-300 p-5 text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400">No approved reviews yet. The first verified customer review will appear here.</p>}</div>{!ownReview && <aside className="rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900"><h2 className="font-semibold text-stone-900 dark:text-stone-100">Share a review</h2>{!signedIn ? <><p className="mt-2 text-sm leading-6 text-stone-500 dark:text-stone-400">Sign in after delivery to review this purchase.</p><button type="button" onClick={onLogin} className="mt-5 w-full rounded-xl bg-stone-900 px-4 py-3 text-sm font-semibold text-white dark:bg-emerald-600">Sign in to review</button></> : !canReview ? <p className="mt-3 text-sm leading-6 text-stone-500 dark:text-stone-400">Reviews unlock after this product has been paid for and marked delivered.</p> : <form className="mt-4 space-y-4" onSubmit={onSubmit}><fieldset><legend className="text-sm font-medium text-stone-700 dark:text-stone-300">Rating</legend><div className="mt-1.5 flex items-center gap-1" role="radiogroup" aria-label="Choose a rating" onMouseLeave={() => setHoverRating(0)}>{Array.from({ length: 5 }, (_, index) => { const value = index + 1; return <button key={value} type="button" role="radio" aria-checked={selectedRating === value} aria-label={`${value} ${value === 1 ? "star" : "stars"}`} onClick={() => setForm({ ...form, rating: value })} onMouseEnter={() => setHoverRating(value)} onFocus={() => setHoverRating(value)} onBlur={() => setHoverRating(0)} className={`rounded-md p-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${value <= displayedRating ? "text-amber-400" : "text-stone-300 hover:text-amber-300 dark:text-stone-700"}`}><Star size={29} fill={value <= displayedRating ? "currentColor" : "none"} /></button>; })}<span className="ml-2 text-sm text-stone-500 dark:text-stone-400">{displayedRating} of 5</span></div></fieldset><label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Title <input maxLength="100" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800" /></label><label className="block text-sm font-medium text-stone-700 dark:text-stone-300">Review <textarea required maxLength="1000" rows="4" value={form.body} onChange={(event) => setForm({ ...form, body: event.target.value })} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800" /></label><div className="grid grid-cols-2 gap-3"><button type="button" onClick={() => setForm({ rating: 5, title: "", body: "" })} className="rounded-xl border border-stone-200 px-4 py-3 text-sm font-semibold text-stone-600 transition hover:bg-stone-50 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800">Cancel</button><button type="submit" className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700">Submit</button></div></form>}{message && <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">{message}</p>}</aside>}</div></section>;
 }

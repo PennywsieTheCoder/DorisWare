@@ -65,5 +65,5 @@ export default function TurnstileWidget({ onTokenChange, resetSignal }) {
   }, [onTokenChange, resetSignal]);
 
   if (!siteKey) return <p className="text-sm text-rose-400">Security check is not configured yet.</p>;
-  return <div ref={containerRef} className="flex min-h-[65px] justify-center" aria-label="Security check" />;
+  return <div ref={containerRef} className="relative z-20 isolate flex min-h-[65px] w-full touch-manipulation justify-center" aria-label="Security check" />;
 }
