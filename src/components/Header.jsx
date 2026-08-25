@@ -1,6 +1,6 @@
 // src/components/Header.jsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Menu, Search, ShoppingCart, User, X, Sun, Moon } from "lucide-react";
 import { useCart } from "../context/Cartcontext";
@@ -14,22 +14,32 @@ export default function Header({ storeName }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const navigate = useNavigate();
   const { count, openCart } = useCart();
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const logoUrl = useStoreLogo();
 
+  useEffect(() => {
+    const updateHeader = () => setHasScrolled(window.scrollY > 8);
+    updateHeader();
+    window.addEventListener("scroll", updateHeader, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeader);
+  }, []);
+
   const handleSearch = (event) => {
     event.preventDefault();
     const query = searchQuery.trim();
+    setIsSearchOpen(false);
+    setIsOpen(false);
     navigate(query ? `/shop?search=${encodeURIComponent(query)}` : "/shop");
   };
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-white/90 backdrop-blur dark:border-stone-800 dark:bg-stone-900/90">
-        <div className="grid h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <header className={`sticky top-0 z-50 border-b border-stone-200/80 bg-white/95 backdrop-blur transition-shadow dark:border-stone-800 dark:bg-stone-900/95 ${hasScrolled ? "shadow-md shadow-stone-900/5 dark:shadow-black/20" : "shadow-none"}`}>
+        <div className="grid min-h-14 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-2 px-3 py-2 sm:px-6 lg:h-16 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:gap-3 lg:py-0">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
             <img src={logoUrl} alt="DorisWare" className="h-9 w-9 shrink-0 rounded-full object-contain sm:h-10 sm:w-10" />
             <span className="hidden truncate font-serif text-xl font-semibold tracking-tight text-stone-900 dark:text-stone-100 sm:inline">{storeName}</span>
@@ -43,7 +53,7 @@ export default function Header({ storeName }) {
             {user?.role === "admin" && <NavLink to="/admin" className={({ isActive }) => isActive ? "border-b-2 border-green-500 pb-1 text-green-600" : "text-gray-600 dark:text-stone-300 hover:text-green-600"}>Admin</NavLink>}
           </nav>
 
-          <form onSubmit={handleSearch} className="flex min-w-0 items-center rounded-xl border border-stone-200 bg-stone-50 px-2.5 py-2 dark:border-stone-700 dark:bg-stone-800 lg:hidden">
+          <form onSubmit={handleSearch} className="order-last col-span-2 flex w-full min-w-0 items-center rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 dark:border-stone-700 dark:bg-stone-800 lg:hidden">
             <Search size={16} className="shrink-0 text-stone-400" />
             <input aria-label="Search products by name" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search products" className="ml-1.5 min-w-0 flex-1 bg-transparent text-sm text-stone-800 outline-none placeholder:text-stone-400 dark:text-stone-100" />
           </form>
@@ -71,7 +81,7 @@ export default function Header({ storeName }) {
             </Link>
           </div>
 
-          <div className="flex shrink-0 items-center justify-self-end gap-0 lg:hidden">
+          <div className="col-start-2 row-start-1 flex shrink-0 items-center justify-self-end gap-0.5 lg:hidden">
             <Link to={user ? "/profile" : "/login"} aria-label={user ? "View profile" : "Sign in"} className="flex h-9 w-9 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-100 hover:text-green-700 dark:text-stone-300 dark:hover:bg-stone-800">
               {user?.avatar ? <img src={user.avatar} alt="" className="h-8 w-8 rounded-full object-cover" /> : <User className="shrink-0" size={19} />}
             </Link>

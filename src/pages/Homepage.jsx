@@ -1,5 +1,4 @@
 import Hero from "../components/Hero";
-import Categories from "../components/Categories";
 import FeaturedProducts from "../components/Featuredproducts";
 import PromoBanner from "../components/Promobanner";
 import WhyChooseUs from "../components/Whychooseus";
@@ -12,9 +11,6 @@ export default function HomePage() {
     <div className="bg-stone-50/50 dark:bg-stone-950 transition-colors duration-200">
       {/* Hero Section */}
       <Hero />
-
-      {/* Featured Categories */}
-      <Categories />
 
       {/* Featured Products */}
       <FeaturedProducts limit={6} />

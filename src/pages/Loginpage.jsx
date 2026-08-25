@@ -192,10 +192,8 @@ export function AuthShell({ title, description, children, bottomLink }) {
       <BrandPanel />
 
       {/* Right: the form */}
-      <div className="relative flex flex-1 items-start justify-center px-4 pb-8 pt-24 sm:items-center sm:px-5 sm:py-10 lg:px-10 xl:px-16">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-br from-emerald-800 via-green-700 to-emerald-600 lg:hidden" />
-        <div className="pointer-events-none absolute -right-16 top-3 h-40 w-40 rounded-full border border-white/15 lg:hidden" />
-        <div className="relative z-10 w-full max-w-md rounded-[1.75rem] bg-white/95 px-5 py-6 shadow-[0_18px_48px_-24px_rgba(20,83,45,.5)] backdrop-blur sm:px-7 sm:py-8 dark:bg-stone-900/95 lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none">
+      <div className="relative flex flex-1 items-start justify-center px-4 py-8 sm:items-center sm:px-5 sm:py-10 lg:px-10 xl:px-16">
+        <div className="relative z-10 w-full max-w-md rounded-[1.75rem] border border-stone-200/80 bg-white/95 px-5 py-6 shadow-[0_18px_48px_-24px_rgba(20,83,45,.5)] backdrop-blur sm:px-7 sm:py-8 dark:border-0 dark:bg-transparent dark:shadow-none lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none">
           {/* Heading */}
           <div className="mb-7">
             <h1 className="font-serif text-3xl font-bold text-stone-900 dark:text-white">

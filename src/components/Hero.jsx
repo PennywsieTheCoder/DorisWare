@@ -19,7 +19,7 @@ export default function Hero() {
   const displayedImage = Math.min(activeImage, Math.max(imageUrls.length - 1, 0));
 
   return (
-    <section className="relative h-[430px] w-full overflow-hidden sm:h-[470px] lg:h-[500px]">
+    <section className="relative h-[400px] w-full overflow-hidden sm:h-[440px] lg:h-[470px]">
       {/* Background Image with Ambient Pan-Zoom Animation */}
       <div className="absolute inset-0 select-none overflow-hidden">
         {imageUrls.map((url, index) => <img key={url} src={url} alt={index === displayedImage ? "DorisWare premium kitchenware" : ""} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 scale-105 animate-[zoomPan_20s_infinite_alternate] ${index === displayedImage ? "opacity-100" : "opacity-0"}`} />)}
@@ -97,7 +97,7 @@ export default function Hero() {
         <svg
           viewBox="0 0 1440 120"
           preserveAspectRatio="none"
-          className="block h-auto w-full"
+          className="block h-16 w-full"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path

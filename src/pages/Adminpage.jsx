@@ -1,10 +1,34 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Navigate, Link } from "react-router-dom";
-import { BarChart3, Box, CheckCircle2, ClipboardList, Package, Pencil, Plus, RefreshCw, Settings2, ShoppingBag } from "lucide-react";
+import { 
+  AlertOctagon,
+  BarChart3, 
+  Box, 
+  CheckCircle2, 
+  ClipboardList, 
+  Crown,
+  ExternalLink,
+  Flame,
+  Inbox,
+  LayoutGrid,
+  Mail,
+  MapPin,
+  Package, 
+  Pencil, 
+  Plus, 
+  RefreshCw, 
+  Settings2, 
+  ShieldCheck, 
+  ShoppingBag, 
+  Sparkles, 
+  TrendingUp, 
+  Truck 
+} from "lucide-react";
 import { useAuth } from "../context/Authcontext";
 import { supabase } from "../lib/supabase";
 import HeroImageManager from "../components/HeroImageManager";
 import StoreLogoManager from "../components/StoreLogoManager";
+import BulkProductImport from "../components/BulkProductImport";
 
 const orderStatuses = ["processing", "shipped", "delivered", "cancelled"];
 const ProductCategoryContext = createContext([]);
@@ -80,8 +104,22 @@ export default function AdminPage() {
     });
     const productsSold = {};
     paidOrders.forEach((order) => order.order_items?.forEach((item) => { productsSold[item.product_name] = (productsSold[item.product_name] ?? 0) + Number(item.quantity); }));
-    return { paidOrders, revenue, average: paidOrders.length ? revenue / paidOrders.length : 0, customerArranged: paidOrders.filter((order) => order.delivery_method === "customer_arranged").length, daily, topProducts: Object.entries(productsSold).sort(([, a], [, b]) => b - a).slice(0, 4) };
+    return { paidOrders, revenue, average: paidOrders.length ? revenue / paidOrders.length : 0, customerArranged: paidOrders.filter((order) => order.delivery_method === "customer_arranged").length, daily, topProducts: Object.entries(productsSold).sort(([, a], [, b]) => b - a).slice(0, 5) };
   }, [orders, reportRange]);
+
+  const topSellingDetails = useMemo(() => {
+    return report.topProducts.map(([name, quantity], index) => {
+      const product = products.find((p) => p.name?.toLowerCase() === name?.toLowerCase()) || {};
+      return {
+        name,
+        quantity,
+        rank: index + 1,
+        image_url: product.image_url || product.image_urls?.[0] || null,
+        price: product.price || 0,
+        category: product.category || "Cookware",
+      };
+    });
+  }, [report.topProducts, products]);
 
   const supportMessages = allCustomerMessages.filter((message) => inboxFilter === "all" || (message.message_type ?? "support") === inboxFilter);
   const availableProductCategories = categories.filter((category) => category.is_active).map((category) => category.name);
@@ -136,7 +174,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     const headingsBySection = {
-      products: ["Add a product", "Products & inventory", "Category cards"],
+      products: ["Add a product", "Bulk product import", "Products & inventory", "Category cards"],
       orders: ["Tracking & delivery details", "Review moderation", "Recent orders"],
       delivery: ["Delivery zones"],
       promotions: ["Promo banner", "About page"],
@@ -347,11 +385,183 @@ export default function AdminPage() {
   if (authLoading) return <div className="flex min-h-[60vh] items-center justify-center text-sm text-stone-500">Loading admin dashboard…</div>;
   if (!user || user.role !== "admin") return <Navigate to="/" replace />;
 
+  const adminDisplayName = user?.name || user?.full_name || (user?.email ? user.email.split("@")[0] : "Admin");
+
   return (
     <ProductCategoryContext.Provider value={availableProductCategories}>
-    <div className="min-h-screen bg-[#f6f6f3] px-4 py-6 dark:bg-stone-950 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <header className="relative overflow-hidden rounded-[2rem] bg-stone-950 px-6 py-7 text-white shadow-xl shadow-stone-900/10 sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" /><div className="pointer-events-none absolute -bottom-28 left-1/3 h-64 w-64 rounded-full bg-amber-400/10 blur-3xl" /><div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.22em] text-emerald-300">DorisWare operations</p><h1 className="mt-3 font-serif text-3xl font-semibold sm:text-4xl">The store, at a glance.</h1><p className="mt-2 max-w-xl text-sm leading-6 text-stone-300">Manage inventory, promotions, delivery, fulfilment, and sales performance from one focused workspace.</p></div><button type="button" onClick={loadDashboard} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-stone-900 shadow-lg transition hover:bg-emerald-50"><RefreshCw size={16} /> Refresh data</button></div><nav className="relative mt-7 flex gap-2 overflow-x-auto pb-1" aria-label="Admin sections">{[["overview", "Overview"], ["products", "Products"], ["orders", "Orders"], ["delivery", "Delivery"], ["promotions", "Promotions"], ["club", "DorisWare Club"], ["contact", "Contact & location"], ["inbox", `Inbox${supportMessages.filter((message) => message.status === "new").length ? ` (${supportMessages.filter((message) => message.status === "new").length})` : ""}`]].map(([id, label]) => <button key={id} type="button" onClick={() => setActiveSection(id)} className={`whitespace-nowrap rounded-full px-4 py-2 text-xs font-semibold transition ${activeSection === id ? "bg-white text-stone-950 shadow-sm" : "bg-white/12 text-white hover:bg-white/20"}`}>{label}</button>)}</nav></header>
+    {/* Accessibility: Skip to main content link */}
+    <a 
+      href="#admin-main" 
+      className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-stone-950 focus:font-bold focus:rounded-xl focus:shadow-2xl focus:outline-none"
+    >
+      Skip to main content
+    </a>
+
+    <div className="flex min-h-screen bg-[#f6f6f3] dark:bg-[#0a0a0c]">
+      
+      {/* ================= LEFT VERTICAL SIDEBAR (DESKTOP) ================= */}
+      <aside className="hidden md:flex w-64 lg:w-72 shrink-0 min-h-screen bg-stone-950 border-r border-stone-800/80 p-5 flex-col justify-between sticky top-0 h-screen overflow-y-auto">
+        <div>
+          {/* Brand & Store Operations Header */}
+          <div className="flex items-center gap-3 px-2 py-3 border-b border-stone-800/80 pb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 text-stone-950 font-bold shadow-lg shadow-emerald-500/20">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <h2 className="font-serif text-lg font-bold tracking-tight text-white">DorisWare</h2>
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-semibold">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Admin Operations
+              </div>
+            </div>
+          </div>
+
+          {/* Section Navigation Header */}
+          <div className="mt-6 px-3">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-stone-500">Navigation</p>
+          </div>
+
+          {/* THE EXACT 8 NAVIGATIONS IN VERTICAL STYLE */}
+          <nav className="mt-2 space-y-1.5" aria-label="Admin Navigation">
+            {[
+              ["overview", "Overview", LayoutGrid, null],
+              ["products", "Products", Box, products.length],
+              ["orders", "Orders", ShoppingBag, orders.filter((o) => o.status === "processing" || o.payment_status === "paid").length],
+              ["delivery", "Delivery", Truck, null],
+              ["promotions", "Promotions", Sparkles, null],
+              ["club", "DorisWare Club", Crown, null],
+              ["contact", "Contact & location", MapPin, null],
+              ["inbox", "Inbox", Inbox, supportMessages.filter((message) => message.status === "new").length],
+            ].map(([id, label, Icon, count]) => {
+              const isActive = activeSection === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveSection(id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 ${
+                    isActive
+                      ? "bg-emerald-500 text-stone-950 font-bold shadow-lg shadow-emerald-500/20"
+                      : "text-stone-400 hover:text-white hover:bg-stone-900 border border-transparent hover:border-stone-800"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon size={16} className={isActive ? "text-stone-950" : "text-stone-400"} />
+                    <span>{label}</span>
+                  </div>
+                  {count !== null && count > 0 && (
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold font-mono ${
+                      isActive
+                        ? "bg-stone-950/20 text-stone-950"
+                        : id === "inbox"
+                          ? "bg-red-500 text-white"
+                          : id === "orders"
+                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                            : "bg-stone-800 text-stone-300"
+                    }`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Bottom Sidebar User Profile & Storefront Link */}
+        <div className="pt-4 border-t border-stone-800/80">
+          <div className="rounded-2xl bg-stone-900/90 border border-stone-800 p-3.5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-800 text-white font-bold text-xs">
+                {(adminDisplayName?.[0] || "A").toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-white truncate">{adminDisplayName}</p>
+                <p className="text-[10px] text-stone-400 truncate">Store Manager</p>
+              </div>
+            </div>
+            <Link 
+              to="/shop" 
+              className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 py-2 text-xs font-bold transition"
+            >
+              <ExternalLink size={13} />
+              View Storefront
+            </Link>
+          </div>
+        </div>
+      </aside>
+
+      {/* ================= RIGHT MAIN CONTENT AREA ================= */}
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+        
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stone-200/80 bg-white/80 px-6 py-4 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-950/80 sm:px-8">
+          <div>
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-stone-900 dark:text-white sm:text-3xl">
+              Welcome back, <span className="italic font-normal text-emerald-600 dark:text-emerald-300">{adminDisplayName}!</span>
+            </h1>
+            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
+              DorisWare Store Operations Hub
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              type="button" 
+              onClick={loadDashboard} 
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 py-2.5 text-xs font-semibold text-stone-700 shadow-sm transition hover:bg-stone-50 active:scale-95 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
+            >
+              <RefreshCw size={14} className="text-emerald-500 transition-transform duration-500 group-hover:rotate-180" /> 
+              Refresh data
+            </button>
+            <Link 
+              to="/shop" 
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 hover:bg-emerald-400 px-4 py-2.5 text-xs font-bold text-stone-950 shadow-md shadow-emerald-500/20 transition active:scale-95"
+            >
+              <ShoppingBag size={14} />
+              <span className="hidden sm:inline">View Storefront</span>
+            </Link>
+          </div>
+        </header>
+
+        {/* Mobile Horizontal Navigation Bar (Visible only on < md screens) */}
+        <div className="md:hidden border-b border-stone-200 bg-white px-4 py-3 dark:border-stone-800 dark:bg-stone-950">
+          <nav className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1" aria-label="Mobile Admin Sections">
+            {[
+              ["overview", "Overview", LayoutGrid, null],
+              ["products", "Products", Box, products.length],
+              ["orders", "Orders", ShoppingBag, orders.filter((o) => o.status === "processing" || o.payment_status === "paid").length],
+              ["delivery", "Delivery", Truck, null],
+              ["promotions", "Promotions", Sparkles, null],
+              ["club", "DorisWare Club", Crown, null],
+              ["contact", "Contact & location", MapPin, null],
+              ["inbox", "Inbox", Inbox, supportMessages.filter((message) => message.status === "new").length],
+            ].map(([id, label, Icon, count]) => {
+              const isActive = activeSection === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setActiveSection(id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex items-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-xs font-semibold transition ${
+                    isActive
+                      ? "bg-emerald-500 text-stone-950 font-bold shadow-sm"
+                      : "bg-stone-100 text-stone-600 dark:bg-stone-900 dark:text-stone-400"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {label}
+                  {count !== null && count > 0 && (
+                    <span className="text-[10px] font-bold font-mono">({count})</span>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        <main id="admin-main" className="w-full flex-1 p-5 sm:p-8 space-y-8">
 
         {error && <p role="alert" className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
         {successMessage && <div role="status" className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-xl motion-safe:animate-pulse"><CheckCircle2 size={18} /> {successMessage}</div>}
@@ -363,28 +573,149 @@ export default function AdminPage() {
 
         {clubSettings && <section className="mt-6 rounded-3xl border border-emerald-200 bg-white p-5 shadow-sm dark:border-emerald-950/60 dark:bg-stone-900 sm:p-6"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">Customer loyalty</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">DorisWare Club</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">These rules are applied securely when Paystack confirms a payment. Changes affect future paid orders only.</p></div><form onSubmit={saveClubSettings} className="mt-5 grid gap-4 rounded-2xl bg-emerald-50/70 p-4 dark:bg-emerald-950/15 sm:grid-cols-2"><AdminField label="Points per ₵1 spent" type="number" min="0" max="100" step="0.01" value={clubSettings.points_per_ghs} onChange={(value) => setClubSettings({ ...clubSettings, points_per_ghs: value })} required /><label className="flex items-center gap-2 self-end pb-2 text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={clubSettings.include_delivery_in_points} onChange={(event) => setClubSettings({ ...clubSettings, include_delivery_in_points: event.target.checked })} className="h-4 w-4 accent-emerald-600" /> Include delivery fees when awarding points</label><label className="flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2"><input type="checkbox" checked={clubSettings.is_active} onChange={(event) => setClubSettings({ ...clubSettings, is_active: event.target.checked })} className="h-4 w-4 accent-emerald-600" /> DorisWare Club is active</label><button type="submit" disabled={savingId === "club-settings"} className="sm:col-span-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">{savingId === "club-settings" ? "Saving Club settings…" : "Save Club settings"}</button></form><div className="mt-6"><h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Membership tiers</h3><div className="mt-3 grid gap-4 lg:grid-cols-3">{clubTiers.map((tier) => <form key={tier.id} onSubmit={(event) => saveClubTier(event, tier)} className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><AdminField label="Tier name" value={tier.name} onChange={(value) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, name: value } : item))} required /><AdminField label="Points required" type="number" min="0" step="1" value={tier.required_points} onChange={(value) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, required_points: value } : item))} required /><label className="mt-3 block text-sm font-medium text-stone-700 dark:text-stone-300">Member message<textarea value={tier.benefit} onChange={(event) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, benefit: event.target.value } : item))} rows="3" className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600 dark:border-stone-700 dark:bg-stone-800" /></label><label className="mt-3 flex items-center gap-2 text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={tier.is_active} onChange={(event) => setClubTiers((current) => current.map((item) => item.id === tier.id ? { ...item, is_active: event.target.checked } : item))} className="h-4 w-4 accent-emerald-600" /> Available tier</label><button type="submit" disabled={savingId === `club-tier-${tier.id}`} className="mt-4 w-full rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-60 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">{savingId === `club-tier-${tier.id}` ? "Saving…" : "Save tier"}</button></form>)}</div></div></section>}
 
-        {activeSection === "inbox" && <div className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm dark:border-stone-800 dark:bg-stone-900"><span className="px-2 text-xs font-bold uppercase tracking-[.12em] text-stone-400">Show</span>{[["all", "All"], ["support", "Support"], ["suggestion", "Suggestions"]].map(([filter, label]) => <button key={filter} type="button" onClick={() => setInboxFilter(filter)} className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${inboxFilter === filter ? "bg-emerald-700 text-white" : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"}`}>{label}{filter !== "all" ? ` (${allCustomerMessages.filter((message) => (message.message_type ?? "support") === filter).length})` : ` (${allCustomerMessages.length})`}</button>)}</div>}
+        {/* Inbox section is now self-contained below */}
 
         {activeSection === "promotions" && <HeroImageManager />}
         {activeSection === "contact" && <StoreLogoManager />}
         {activeSection === "products" && <CategoryManager categories={categories} onCategoriesChange={setCategories} />}
+        {activeSection === "products" && <BulkProductImport categories={availableProductCategories} existingProducts={products} onImported={(createdProducts) => setProducts((current) => [...current, ...createdProducts])} />}
 
         {activeSection === "contact" && <SocialLinksManager links={socialLinks} onLinksChange={setSocialLinks} setPageError={setError} />}
-        {activeSection === "overview" && <>
-        <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric icon={ShoppingBag} label="Paid orders" value={metrics.paidOrders} tone="green" />
-          <Metric icon={CheckCircle2} label="Paid revenue" value={formatMoney(metrics.revenue)} tone="emerald" />
-          <Metric icon={Package} label="Low stock" value={metrics.lowStock} tone="amber" />
-          <Metric icon={Box} label="Out of stock" value={metrics.outOfStock} tone="red" />
-        </section>
+        {activeSection === "overview" && (
+          <div className="space-y-8">
+            {/* 4 Stat KPI Cards (Inspo 2 Highlight Layout) */}
+            <section aria-label="Key performance indicators" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Hero Highlight Card: Paid Revenue */}
+              <div className="rounded-3xl p-6 relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-800 text-white shadow-xl shadow-emerald-950/40 border border-emerald-500/30 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-100">Total Paid Revenue</span>
+                  <span className="text-xs font-bold bg-emerald-950/50 text-emerald-200 border border-emerald-400/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <TrendingUp size={13} /> Active
+                  </span>
+                </div>
+                <p className="mt-4 text-3xl sm:text-4xl font-extrabold tracking-tight">{formatMoney(metrics.revenue)}</p>
+                <p className="mt-1.5 text-xs text-emerald-100/90 font-medium">Verified gross earnings</p>
+              </div>
 
-        <section className="mt-8 overflow-hidden rounded-3xl bg-stone-950 p-5 text-white shadow-xl shadow-stone-900/10 sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4"><div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-400 text-stone-950"><BarChart3 size={21} /></span><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-300">Performance report</p><h2 className="mt-1 text-xl font-semibold">Store intelligence</h2><p className="mt-1 text-sm text-stone-300">Paid orders only. Revenue and product demand update from the latest orders.</p></div></div><div className="flex rounded-xl bg-white/10 p-1">{[7, 30, 90].map((range) => <button key={range} type="button" onClick={() => setReportRange(range)} className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${reportRange === range ? "bg-white text-stone-950 shadow-sm" : "text-stone-300 hover:text-white"}`}>{range} days</button>)}</div></div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><ReportMetric label="Paid revenue" value={formatMoney(report.revenue)} /><ReportMetric label="Paid orders" value={report.paidOrders.length} /><ReportMetric label="Average order" value={formatMoney(report.average)} /><ReportMetric label="Own delivery" value={`${report.customerArranged} order${report.customerArranged === 1 ? "" : "s"}`} /></div>
-          <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(250px,0.8fr)]"><div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">Daily paid revenue</h3><p className="mt-1 text-xs text-stone-400">Last {reportRange} days</p></div><p className="text-xs font-medium text-emerald-300">{formatMoney(Math.max(...report.daily.map((day) => day.value), 0))} peak</p></div><div className="mt-5 flex h-40 items-end gap-1.5" aria-label={`Daily paid revenue for the last ${reportRange} days`}>{report.daily.map((day, index) => { const maximum = Math.max(...report.daily.map((item) => item.value), 1); const showLabel = reportRange <= 7 || index === 0 || index === report.daily.length - 1 || index % Math.ceil(reportRange / 5) === 0; return <div key={day.key} className="flex h-full min-w-0 flex-1 flex-col justify-end"><div title={`${day.label}: ${formatMoney(day.value)}`} className="min-h-0 rounded-t-sm bg-emerald-400/90 transition hover:bg-emerald-300" style={{ height: day.value ? `${Math.max((day.value / maximum) * 100, 4)}%` : "2px" }} /><span className="mt-2 truncate text-center text-[9px] text-stone-500">{showLabel ? day.label : ""}</span></div>; })}</div></div><div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><div><h3 className="font-semibold">Best sellers</h3><p className="mt-1 text-xs text-stone-400">Units sold in this period</p></div><div className="mt-4 space-y-3">{report.topProducts.length ? report.topProducts.map(([name, quantity], index) => <div key={name} className="flex items-center gap-3"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-xs font-bold text-emerald-300">{index + 1}</span><p className="min-w-0 flex-1 truncate text-sm font-medium">{name}</p><span className="text-xs font-semibold text-stone-300">{quantity} sold</span></div>) : <p className="rounded-xl border border-dashed border-white/15 px-3 py-4 text-sm text-stone-400">No paid sales in this period yet.</p>}</div></div></div>
-        </section>
-        <InteractiveReport report={report} formatMoney={formatMoney} selectedDay={selectedReportDay} onSelectDay={setSelectedReportDay} />
-        </>}
+              {/* Card 2: Paid Orders */}
+              <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 dark:border-stone-800 dark:bg-stone-900/90 hover:border-emerald-500/40 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Paid Orders</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition">
+                    <ShoppingBag size={18} />
+                  </div>
+                </div>
+                <p className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{metrics.paidOrders}</p>
+                <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400 font-medium">Completed transactions</p>
+              </div>
+
+              {/* Card 3: Low Stock Alert */}
+              <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 dark:border-stone-800 dark:bg-stone-900/90 hover:border-amber-500/40 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Low Stock Alert</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition">
+                    <Package size={18} />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-3xl sm:text-4xl font-bold tracking-tight text-amber-600 dark:text-amber-400">{metrics.lowStock}</span>
+                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/40">&lt; 5 left</span>
+                </div>
+                <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400 font-medium">Restocking required</p>
+              </div>
+
+              {/* Card 4: Out of Stock */}
+              <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 dark:border-stone-800 dark:bg-stone-900/90 hover:border-red-500/40 group">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">Out of Stock</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 group-hover:scale-105 transition">
+                    <AlertOctagon size={18} />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-baseline gap-2">
+                  <span className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{metrics.outOfStock}</span>
+                  {metrics.outOfStock > 0 && (
+                    <span className="text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-800/40">Unavailable</span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400 font-medium">Hidden from catalog</p>
+              </div>
+            </section>
+
+            {/* Top Selling Products Showcase (Inspo 3 Layout) */}
+            <section className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-7 shadow-sm dark:border-stone-800 dark:bg-stone-900/90">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-5 dark:border-stone-800">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    <Flame size={19} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[.14em] text-emerald-600 dark:text-emerald-400">Product Performance</p>
+                    <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">Top Selling Products</h2>
+                  </div>
+                </div>
+                <p className="text-xs text-stone-500 dark:text-stone-400">Ranked by verified units sold in this period</p>
+              </div>
+
+              {topSellingDetails.length > 0 ? (
+                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                  {topSellingDetails.map((item) => (
+                    <div 
+                      key={item.name} 
+                      className="group relative flex flex-col items-center text-center rounded-3xl border border-stone-200 bg-stone-50/60 p-4 transition-all duration-300 hover:border-emerald-500/40 hover:shadow-md dark:border-stone-800 dark:bg-stone-950/60"
+                    >
+                      {/* Rank Badge */}
+                      <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-[10px] font-extrabold shadow-sm ${
+                        item.rank === 1 
+                          ? "bg-amber-500 text-stone-950" 
+                          : item.rank === 2 
+                            ? "bg-stone-600 text-white" 
+                            : item.rank === 3 
+                              ? "bg-amber-800 text-white" 
+                              : "bg-stone-800 text-stone-400"
+                      }`}>
+                        #{item.rank}
+                      </span>
+
+                      {/* Thumbnail or Fallback Icon */}
+                      <div className="mt-2 flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-2xl border border-stone-200/80 bg-white transition-transform duration-300 group-hover:scale-[1.02] dark:border-stone-800 dark:bg-stone-900">
+                        {item.image_url ? (
+                          <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <Box size={28} className="text-stone-400" />
+                        )}
+                      </div>
+
+                      <h3 className="mt-3 w-full truncate text-xs font-semibold text-stone-900 dark:text-stone-100" title={item.name}>
+                        {item.name}
+                      </h3>
+                      <p className="mt-0.5 text-[11px] text-stone-500 dark:text-stone-400">{item.category}</p>
+
+                      <div className="mt-3 flex w-full items-center justify-between border-t border-stone-200/60 pt-2 text-xs dark:border-stone-800/80">
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.price ? formatMoney(item.price) : "—"}</span>
+                        <span className="font-semibold text-stone-700 dark:text-stone-300">{item.quantity} sold</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-6 rounded-2xl border border-dashed border-stone-300 p-8 text-center text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400">
+                  No product sales recorded for this period yet.
+                </p>
+              )}
+            </section>
+
+            {/* Sales Intelligence & Fulfilment Row (Inspo 2 & Inspo 3) */}
+            <InteractiveReport 
+              report={report} 
+              reportRange={reportRange}
+              setReportRange={setReportRange}
+              formatMoney={formatMoney} 
+              selectedDay={selectedReportDay} 
+              onSelectDay={setSelectedReportDay} 
+            />
+          </div>
+        )}
 
         {/* Product tools */}
         <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6">
@@ -409,7 +740,165 @@ export default function AdminPage() {
 
         <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-sky-700 dark:text-sky-400">Delivery setup</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Delivery zones</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Only active zones are available at checkout.</p></div><button type="button" onClick={() => setEditingDeliveryZone({ name: "", regionsText: "", shipping_fee: "", estimated_delivery: "", is_active: true, sort_order: deliveryZones.length + 1 })} className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700"><Plus size={16} /> Add zone</button></div><div className="mt-5 grid gap-3 sm:grid-cols-2">{deliveryZones.map((zone) => <div key={zone.id} className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-stone-900 dark:text-stone-100">{zone.name}</p><p className="mt-1 text-sm font-medium text-sky-700 dark:text-sky-400">{formatMoney(zone.shipping_fee)} · {zone.estimated_delivery}</p><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{zone.regions.join(", ")}</p></div><button type="button" onClick={() => setEditingDeliveryZone({ ...zone, regionsText: zone.regions.join(", ") })} className="rounded-lg border border-stone-200 p-2 text-stone-600 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800" aria-label={`Edit ${zone.name}`}><Pencil size={15} /></button></div><p className={`mt-3 text-xs font-semibold ${zone.is_active ? "text-emerald-600" : "text-stone-500"}`}>{zone.is_active ? "Active at checkout" : "Hidden from checkout"}</p></div>)}</div>{editingDeliveryZone && <form onSubmit={saveDeliveryZone} className="mt-5 grid gap-4 rounded-2xl border border-sky-200 bg-sky-50/50 p-4 dark:border-sky-900/50 dark:bg-sky-950/15 sm:grid-cols-2"><AdminField label="Zone name" value={editingDeliveryZone.name} onChange={(value) => setEditingDeliveryZone({ ...editingDeliveryZone, name: value })} required /><AdminField label="Delivery fee (₵)" type="number" min="0" step="0.01" value={editingDeliveryZone.shipping_fee} onChange={(value) => setEditingDeliveryZone({ ...editingDeliveryZone, shipping_fee: value })} required /><AdminField label="Regions (comma separated)" value={editingDeliveryZone.regionsText} onChange={(value) => setEditingDeliveryZone({ ...editingDeliveryZone, regionsText: value })} required /><AdminField label="Delivery estimate" value={editingDeliveryZone.estimated_delivery} onChange={(value) => setEditingDeliveryZone({ ...editingDeliveryZone, estimated_delivery: value })} required /><AdminField label="Display order" type="number" min="0" value={editingDeliveryZone.sort_order} onChange={(value) => setEditingDeliveryZone({ ...editingDeliveryZone, sort_order: value })} required /><label className="flex items-center gap-2 self-end text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={editingDeliveryZone.is_active} onChange={(event) => setEditingDeliveryZone({ ...editingDeliveryZone, is_active: event.target.checked })} className="h-4 w-4 accent-sky-600" /> Enable at checkout</label><div className="flex gap-3 sm:col-span-2"><button type="submit" disabled={savingId === "delivery-zone"} className="rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white hover:bg-sky-700 disabled:opacity-60">{savingId === "delivery-zone" ? "Saving…" : "Save delivery zone"}</button><button type="button" onClick={() => setEditingDeliveryZone(null)} className="rounded-xl border border-stone-200 px-5 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800">Cancel</button></div></form>}</section>
 
-        <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">Customer care</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Customer inbox</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Support requests and newsletter joins from the storefront.</p></div><div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">{subscribers.filter((subscriber) => subscriber.status === "subscribed").length} subscribers</div></div><div className="mt-5 space-y-3">{supportMessages.length ? supportMessages.map((message) => <article key={message.id} className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-stone-900 dark:text-stone-100">{message.first_name} {message.last_name}</p><span className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">{message.subject}</span></div><p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{message.email}{message.phone ? ` · ${message.phone}` : ""} · {new Date(message.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-stone-700 dark:text-stone-300">{message.message}</p></div><select aria-label={`Status for message from ${message.first_name}`} value={message.status} disabled={savingId === message.id} onChange={(event) => updateSupportMessageStatus(message.id, event.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-medium dark:border-stone-700 dark:bg-stone-800"><option value="new">New</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option><option value="closed">Closed</option></select></div></article>) : <p className="rounded-2xl border border-dashed border-stone-300 p-5 text-sm text-stone-500 dark:border-stone-700">No support messages yet.</p>}</div>{subscribers.length > 0 && <div className="mt-6 border-t border-stone-100 pt-5 dark:border-stone-800"><p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Latest newsletter subscribers</p><div className="mt-3 flex flex-wrap gap-2">{subscribers.slice(0, 12).map((subscriber) => <span key={subscriber.id} className="rounded-full border border-stone-200 px-3 py-1.5 text-xs text-stone-600 dark:border-stone-700 dark:text-stone-300">{subscriber.email}</span>)}</div></div>}</section>
+        <section className="mt-8 rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900 overflow-hidden">
+          {/* Inbox Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 dark:border-stone-800 px-6 py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                <Inbox size={19} />
+              </div>
+              <div>
+                <h2 className="font-bold text-stone-900 dark:text-stone-100">Customer inbox</h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400">Support requests from the storefront</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Summary badges */}
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 px-3 py-1.5 text-xs font-bold text-red-600 dark:text-red-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                {allCustomerMessages.filter(m => m.status === "new").length} New
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 px-3 py-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {allCustomerMessages.filter(m => m.status === "in_progress").length} In progress
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-3 py-1.5 text-xs font-semibold text-stone-500 dark:text-stone-400">
+                {allCustomerMessages.length} Total
+              </span>
+            </div>
+          </div>
+
+          {/* Filter tabs */}
+          <div className="flex items-center gap-1 border-b border-stone-100 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-950/40 px-6 py-2.5">
+            {[["all", "All messages", allCustomerMessages.length], ["support", "Support", allCustomerMessages.filter(m => (m.message_type ?? "support") === "support").length], ["suggestion", "Suggestions", allCustomerMessages.filter(m => (m.message_type ?? "support") === "suggestion").length]].map(([filter, label, count]) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setInboxFilter(filter)}
+                className={`flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
+                  inboxFilter === filter
+                    ? "bg-white dark:bg-stone-800 text-stone-900 dark:text-white shadow-sm border border-stone-200 dark:border-stone-700"
+                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                }`}
+              >
+                {label}
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${inboxFilter === filter ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" : "bg-stone-200 text-stone-500 dark:bg-stone-700 dark:text-stone-400"}`}>
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Message list */}
+          <div className="divide-y divide-stone-100 dark:divide-stone-800">
+            {supportMessages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-400">
+                  <Inbox size={24} />
+                </div>
+                <p className="text-sm font-semibold text-stone-500 dark:text-stone-400">No messages yet</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500">Support requests will appear here once customers reach out.</p>
+              </div>
+            ) : supportMessages.map((message) => {
+              const statusConfig = {
+                new: { label: "New", cls: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" },
+                in_progress: { label: "In progress", cls: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400" },
+                resolved: { label: "Resolved", cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400" },
+                closed: { label: "Closed", cls: "bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400" },
+              };
+              const cfg = statusConfig[message.status] ?? statusConfig.closed;
+              const initials = `${message.first_name?.[0] ?? ""}${message.last_name?.[0] ?? ""}`.toUpperCase() || "?";
+              const avatarColors = ["bg-violet-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500", "bg-sky-500"];
+              const avatarColor = avatarColors[(message.first_name?.charCodeAt(0) ?? 0) % avatarColors.length];
+
+              return (
+                <article key={message.id} className="group grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 px-6 py-5 hover:bg-stone-50/80 dark:hover:bg-stone-950/50 transition-colors">
+                  <div className="flex items-start gap-4 min-w-0">
+                    {/* Avatar */}
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${avatarColor} text-white text-xs font-bold shadow-sm`}>
+                      {initials}
+                    </div>
+
+                    {/* Content */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-sm text-stone-900 dark:text-stone-100">
+                          {message.first_name} {message.last_name}
+                        </p>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${cfg.cls}`}>
+                          {cfg.label}
+                        </span>
+                        {message.message_type && message.message_type !== "support" && (
+                          <span className="rounded-full bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                            {message.message_type}
+                          </span>
+                        )}
+                        {message.subject && (
+                          <span className="rounded-full bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 px-2 py-0.5 text-[10px] font-semibold">
+                            {message.subject}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
+                        {message.email}{message.phone ? ` · ${message.phone}` : ""} ·{" "}
+                        {new Date(message.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+
+                      <p className="mt-2.5 text-sm leading-6 text-stone-600 dark:text-stone-300 line-clamp-3 whitespace-pre-wrap">
+                        {message.message}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status selector */}
+                  <div className="flex items-start lg:items-center pl-14 lg:pl-0">
+                    <select
+                      aria-label={`Status for message from ${message.first_name}`}
+                      value={message.status}
+                      disabled={savingId === message.id}
+                      onChange={(event) => updateSupportMessageStatus(message.id, event.target.value)}
+                      className="rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs font-semibold text-stone-700 dark:text-stone-200 shadow-sm transition hover:border-stone-300 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                    >
+                      <option value="new">🔴 New</option>
+                      <option value="in_progress">🟡 In progress</option>
+                      <option value="resolved">🟢 Resolved</option>
+                      <option value="closed">⚫ Closed</option>
+                    </select>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          {/* Newsletter subscribers strip */}
+          {subscribers.length > 0 && (
+            <div className="border-t border-stone-100 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-950/40 px-6 py-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
+                    <Mail size={13} />
+                  </div>
+                  <span className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                    Newsletter · <span className="text-emerald-600 dark:text-emerald-400">{subscribers.filter(s => s.status === "subscribed").length} subscribed</span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {subscribers.slice(0, 12).map((subscriber) => (
+                    <span key={subscriber.id} className="rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-2.5 py-1 text-[11px] text-stone-500 dark:text-stone-400">
+                      {subscriber.email}
+                    </span>
+                  ))}
+                  {subscribers.length > 12 && (
+                    <span className="rounded-full bg-stone-200 dark:bg-stone-700 px-2.5 py-1 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
+                      +{subscribers.length - 12} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
 
         {aboutContent && <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-amber-700 dark:text-amber-400">Storefront content</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">About page</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Update the public story and its image without changing code.</p></div><form onSubmit={saveAboutContent} className="mt-5 grid gap-4 sm:grid-cols-2"><AdminField label="Eyebrow" value={aboutContent.eyebrow} onChange={(value) => setAboutContent({ ...aboutContent, eyebrow: value })} required /><AdminField label="Title" value={aboutContent.title} onChange={(value) => setAboutContent({ ...aboutContent, title: value })} required /><label className="text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2">Story<textarea required value={aboutContent.description} onChange={(event) => setAboutContent({ ...aboutContent, description: event.target.value })} className="mt-1.5 min-h-28 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-amber-500 dark:border-stone-700 dark:bg-stone-800" /></label><label className="text-sm font-medium text-stone-700 dark:text-stone-300">Story image <input type="file" accept="image/*" onChange={(event) => setAboutImage(event.target.files?.[0] ?? null)} className="mt-1.5 block w-full text-sm" /></label><label className="flex items-center gap-2 self-end text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={aboutContent.is_active} onChange={(event) => setAboutContent({ ...aboutContent, is_active: event.target.checked })} className="h-4 w-4 accent-amber-500" /> Show this About content</label>{aboutContent.image_url && <img src={aboutContent.image_url} alt="Current About page" className="h-32 w-full rounded-xl border border-stone-200 object-cover sm:col-span-2 dark:border-stone-700" />}<button type="submit" disabled={savingId === "about-content"} className="sm:col-span-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-stone-950 hover:bg-amber-400 disabled:opacity-60">{savingId === "about-content" ? "Saving About page…" : "Save About page"}</button></form></section>}
 
@@ -419,19 +908,122 @@ export default function AdminPage() {
           <div className="flex items-center gap-3 border-b border-stone-100 px-5 py-5 dark:border-stone-800 sm:px-6"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"><ClipboardList size={19} /></span><div><h2 className="font-semibold text-stone-900 dark:text-stone-100">Recent orders</h2><p className="text-xs text-stone-500 dark:text-stone-400">Update fulfilment only after payment is confirmed.</p></div></div>
           {loading ? <LoadingRows /> : <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-left text-sm"><thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500 dark:bg-stone-900/60 dark:text-stone-400"><tr><th className="px-6 py-3 font-semibold">Order</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Items</th><th className="px-4 py-3 font-semibold">Delivery</th><th className="px-4 py-3 font-semibold">Payment</th><th className="px-4 py-3 font-semibold">Fulfilment</th></tr></thead><tbody className="divide-y divide-stone-100 dark:divide-stone-800">{orders.slice(0, 12).map((order) => <tr key={order.id}><td className="px-6 py-4"><p className="font-semibold text-stone-900 dark:text-stone-100">{order.order_number}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{formatMoney(order.total)}</p></td><td className="px-4 py-4 text-stone-600 dark:text-stone-300">{order.contact_email}</td><td className="px-4 py-4 text-stone-600 dark:text-stone-300">{order.order_items?.map((item) => `${item.product_name} × ${item.quantity}`).join(", ") || "—"}</td><td className="px-4 py-4 text-stone-600 dark:text-stone-300">{order.delivery_method === "customer_arranged" ? "Customer-arranged" : "DorisWare delivery"}</td><td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[order.payment_status] ?? "bg-stone-100 text-stone-600"}`}>{formatStatus(order.payment_status)}</span></td><td className="px-4 py-4"><select aria-label={`Fulfilment status for ${order.order_number}`} disabled={order.payment_status !== "paid" || savingId === order.id} value={order.status} onChange={(event) => updateOrderStatus(order.id, event.target.value)} className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:bg-stone-800">{orderStatuses.map((status) => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></td></tr>)}</tbody></table></div>}
         </section>
+        </main>
       </div>
     </div>
     </ProductCategoryContext.Provider>
   );
 }
 
-function InteractiveReport({ report, formatMoney, selectedDay, onSelectDay }) {
+function InteractiveReport({ report, reportRange, setReportRange, formatMoney, selectedDay, onSelectDay }) {
   const activeDay = report.daily.find((day) => day.key === selectedDay) ?? report.daily[report.daily.length - 1];
   const maximum = Math.max(...report.daily.map((day) => day.value), 1);
   const deliveryBreakdown = { dorisware: 0, arranged: 0 };
   report.paidOrders.forEach((order) => { deliveryBreakdown[order.delivery_method === "customer_arranged" ? "arranged" : "dorisware"] += 1; });
 
-  return <section className="mt-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">Explore the period</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Revenue activity</h2><p className="mt-1 text-sm text-stone-500 dark:text-stone-400">Select any bar to inspect that day&apos;s paid sales.</p></div>{activeDay && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-right dark:bg-emerald-950/30"><p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">{activeDay.label}</p><p className="mt-1 text-lg font-bold text-emerald-900 dark:text-emerald-100">{formatMoney(activeDay.value)}</p></div>}</div><div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.65fr)_minmax(220px,.7fr)]"><div><div className="flex h-56 items-end gap-1.5 border-b border-stone-200 pb-1 dark:border-stone-700" aria-label="Interactive paid revenue chart">{report.daily.map((day, index) => { const selected = activeDay?.key === day.key; const showLabel = report.daily.length <= 14 || index === 0 || index === report.daily.length - 1 || index % Math.ceil(report.daily.length / 6) === 0; return <button key={day.key} type="button" onClick={() => onSelectDay(day.key)} aria-pressed={selected} aria-label={`${day.label}: ${formatMoney(day.value)}`} className="group flex h-full min-w-0 flex-1 flex-col justify-end focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"><span className={`min-h-1 rounded-t-md transition-all ${selected ? "bg-emerald-600" : "bg-emerald-200 group-hover:bg-emerald-400 dark:bg-emerald-900/70 dark:group-hover:bg-emerald-600"}`} style={{ height: day.value ? `${Math.max((day.value / maximum) * 100, 3)}%` : "3px" }} /><span className="mt-2 truncate text-center text-[10px] text-stone-400">{showLabel ? day.label : ""}</span></button>; })}</div><div className="mt-3 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400"><span>Click a day for details</span><span>Period peak: {formatMoney(maximum)}</span></div></div><div className="space-y-4"><div className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><h3 className="font-semibold text-stone-900 dark:text-stone-100">Delivery mix</h3><div className="mt-4 space-y-3"><ReportBreakdown label="DorisWare delivery" value={deliveryBreakdown.dorisware} total={report.paidOrders.length} tone="bg-emerald-500" /><ReportBreakdown label="Own courier / pickup" value={deliveryBreakdown.arranged} total={report.paidOrders.length} tone="bg-amber-500" /></div></div><div className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><h3 className="font-semibold text-stone-900 dark:text-stone-100">Top demand</h3>{report.topProducts.length ? <ol className="mt-3 space-y-2">{report.topProducts.slice(0, 3).map(([name, quantity]) => <li key={name} className="flex items-center justify-between gap-3 text-sm"><span className="min-w-0 truncate text-stone-600 dark:text-stone-300">{name}</span><span className="shrink-0 font-semibold text-stone-900 dark:text-stone-100">{quantity} sold</span></li>)}</ol> : <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">Sales data will appear here.</p>}</div></div></div></section>;
+  return (
+    <section className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-7 shadow-sm dark:border-stone-800 dark:bg-stone-900/90">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-100 pb-5 dark:border-stone-800">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-emerald-600 dark:text-emerald-400">Sales Intelligence</p>
+          <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">Daily Revenue Activity</h2>
+        </div>
+        <div className="flex items-center gap-1.5 rounded-2xl bg-stone-100 p-1.5 dark:bg-stone-950 border border-stone-200 dark:border-stone-800">
+          {[7, 30, 90].map((range) => (
+            <button
+              key={range}
+              type="button"
+              onClick={() => setReportRange(range)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
+                reportRange === range
+                  ? "bg-white text-stone-950 shadow-sm dark:bg-stone-800 dark:text-white"
+                  : "text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-white"
+              }`}
+            >
+              {range} Days
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.8fr)_minmax(260px,1fr)]">
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-stone-500 dark:text-stone-400">Click any day bar to inspect</span>
+            {activeDay && (
+              <div className="rounded-xl bg-emerald-50 px-3 py-1.5 text-right dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50">
+                <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">{activeDay.label}: </span>
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-100">{formatMoney(activeDay.value)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex h-52 items-end gap-1.5 border-b border-stone-200 pb-2 dark:border-stone-800" aria-label="Interactive paid revenue chart">
+            {report.daily.map((day, index) => {
+              const selected = activeDay?.key === day.key;
+              const showLabel = reportRange <= 7 || index === 0 || index === report.daily.length - 1 || index % Math.ceil(reportRange / 6) === 0;
+              return (
+                <button
+                  key={day.key}
+                  type="button"
+                  onClick={() => onSelectDay(day.key)}
+                  aria-pressed={selected}
+                  aria-label={`${day.label}: ${formatMoney(day.value)}`}
+                  className="group flex h-full min-w-0 flex-1 flex-col justify-end focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                >
+                  <span
+                    className={`min-h-1 rounded-t-lg transition-all ${
+                      selected
+                        ? "bg-emerald-500 shadow-md shadow-emerald-500/30"
+                        : "bg-emerald-200 group-hover:bg-emerald-400 dark:bg-stone-800 dark:group-hover:bg-emerald-500/80"
+                    }`}
+                    style={{ height: day.value ? `${Math.max((day.value / maximum) * 100, 4)}%` : "3px" }}
+                  />
+                  <span className="mt-2 truncate text-center text-[10px] text-stone-400">
+                    {showLabel ? day.label : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+            <span>Period peak: <strong className="text-stone-900 dark:text-stone-100">{formatMoney(maximum)}</strong></span>
+            <span>Average order: <strong className="text-stone-900 dark:text-stone-100">{formatMoney(report.average)}</strong></span>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between rounded-2xl border border-stone-200 bg-stone-50/50 p-5 dark:border-stone-800 dark:bg-stone-950/60">
+          <div>
+            <div className="flex items-center justify-between border-b border-stone-200/60 pb-3 dark:border-stone-800/80">
+              <h3 className="font-bold text-stone-900 dark:text-stone-100">Fulfilment & Delivery Mix</h3>
+              <Truck size={16} className="text-emerald-500" />
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <ReportBreakdown 
+                label="DorisWare delivery" 
+                value={deliveryBreakdown.dorisware} 
+                total={report.paidOrders.length} 
+                tone="bg-emerald-500" 
+              />
+              <ReportBreakdown 
+                label="Customer courier / pickup" 
+                value={deliveryBreakdown.arranged} 
+                total={report.paidOrders.length} 
+                tone="bg-amber-500" 
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-stone-200/60 dark:border-stone-800/80 flex items-center justify-between text-xs">
+            <span className="text-stone-500 dark:text-stone-400">Total Fulfilled Orders:</span>
+            <span className="font-bold text-stone-900 dark:text-stone-100">{report.paidOrders.length} orders</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function ReportBreakdown({ label, value, total, tone }) {
@@ -440,12 +1032,45 @@ function ReportBreakdown({ label, value, total, tone }) {
 }
 
 function Metric({ icon: Icon, label, value, tone }) {
-  const tones = { green: "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400", emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400", amber: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400", red: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" };
-  return <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900"><div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}><Icon size={19} /></div><p className="mt-4 text-2xl font-bold text-stone-900 dark:text-stone-100">{value}</p><p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{label}</p></div>;
+  const tones = { 
+    green: {
+      badge: "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
+      border: "hover:border-emerald-500/40"
+    }, 
+    emerald: {
+      badge: "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
+      border: "hover:border-emerald-500/40"
+    }, 
+    amber: {
+      badge: "bg-amber-500/10 border border-amber-500/20 text-amber-400",
+      border: "hover:border-amber-500/40"
+    }, 
+    red: {
+      badge: "bg-red-500/10 border border-red-500/20 text-red-400",
+      border: "hover:border-red-500/40"
+    } 
+  };
+  const currentTone = tones[tone] ?? tones.emerald;
+  return (
+    <div className={`group rounded-3xl border border-stone-200 bg-white p-6 shadow-sm transition-all duration-300 dark:border-stone-800 dark:bg-stone-900/90 ${currentTone.border}`}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400">{label}</span>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl transition duration-300 group-hover:scale-105 ${currentTone.badge}`}>
+          <Icon size={18} />
+        </div>
+      </div>
+      <p className="mt-4 text-3xl font-bold tracking-tight text-stone-900 dark:text-stone-100">{value}</p>
+    </div>
+  );
 }
 
 function ReportMetric({ label, value }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"><p className="text-xs font-medium uppercase tracking-[.12em] text-stone-400">{label}</p><p className="mt-2 text-2xl font-semibold tracking-tight text-white">{value}</p></div>;
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4.5 backdrop-blur-sm transition duration-300 hover:border-white/20">
+      <p className="text-xs font-semibold uppercase tracking-[.12em] text-stone-400">{label}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-white">{value}</p>
+    </div>
+  );
 }
 
 function Toggle({ checked, disabled, label, onChange }) {
