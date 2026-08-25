@@ -36,25 +36,27 @@ export default function App() {
 
       <ScrollToTop />
       <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<HomeOrPasswordReset />} />
-          <Route path="/shop" element={<ShopPage />} />
-          <Route path="/product/:id" element={<KeyedProductPage />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-          <Route path="/delivery" element={<InfoPage type="delivery" />} />
-          <Route path="/returns" element={<InfoPage type="returns" />} />
-          <Route path="/privacy" element={<InfoPage type="privacy" />} />
-          <Route path="/terms" element={<InfoPage type="terms" />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/reset-password" element={<PasswordResetPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <div key={`${location.pathname}${location.search}`} className="route-transition min-h-full">
+          <Routes>
+            <Route path="/" element={<HomeOrPasswordReset />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/product/:id" element={<KeyedProductPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+            <Route path="/delivery" element={<InfoPage type="delivery" />} />
+            <Route path="/returns" element={<InfoPage type="returns" />} />
+            <Route path="/privacy" element={<InfoPage type="privacy" />} />
+            <Route path="/terms" element={<InfoPage type="terms" />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/reset-password" element={<PasswordResetPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
       </main>
 
       {showFooter && <Footer storeName="DorisWare" contactEmail="info@dorisware.com" />}
