@@ -49,7 +49,11 @@ export default function FAQ() {
               <button
                 type="button"
                 onClick={() => toggle(idx)}
-                className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left font-semibold text-stone-850 hover:bg-stone-50 dark:text-stone-100 dark:hover:bg-stone-850"
+                className={`flex w-full items-center justify-between gap-4 px-6 py-5 text-left font-semibold text-stone-850 transition-colors dark:text-stone-100 ${
+                  isOpen
+                    ? "bg-amber-50/50 hover:bg-amber-50 dark:bg-stone-800/80 dark:hover:bg-stone-800"
+                    : "hover:bg-stone-50 dark:hover:bg-stone-800/70"
+                }`}
               >
                 <span className="flex items-center gap-3">
                   <HelpCircle size={18} className="text-amber-500 shrink-0" />

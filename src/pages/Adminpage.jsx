@@ -13,8 +13,10 @@ import {
   LayoutGrid,
   Mail,
   MapPin,
+  MoreHorizontal,
   Package, 
   Pencil, 
+  Phone,
   Plus, 
   RefreshCw, 
   Settings2, 
@@ -137,7 +139,7 @@ export default function AdminPage() {
       supabase.from("categories").select("id, name, description, image_url, sort_order, is_active").order("sort_order"),
       supabase.from("delivery_zones").select("id, name, regions, shipping_fee, estimated_delivery, is_active, sort_order").order("sort_order"),
       supabase.from("promo_banners").select("id, eyebrow, title, highlight, description, cta_label, cta_path, image_url, is_active, ends_at, discount_percent, discount_scope, discount_categories").order("sort_order").limit(1).maybeSingle(),
-      supabase.from("orders").select("id, order_number, contact_email, contact_phone, shipping_address, total, status, payment_status, payment_method, delivery_method, tracking_number, estimated_delivery_at, fulfilment_note, created_at, order_items(product_name, quantity)").order("created_at", { ascending: false }).limit(250),
+      supabase.from("orders").select("id, order_number, contact_email, contact_phone, shipping_address, total, status, payment_status, payment_method, delivery_method, tracking_number, estimated_delivery_at, fulfilment_note, created_at, order_items(product_id, product_name, product_image_url, unit_price, quantity)").order("created_at", { ascending: false }).limit(250),
       supabase.from("product_reviews").select("id, product_id, user_id, rating, title, body, is_visible, created_at").order("created_at", { ascending: false }),
       supabase.from("about_content").select("id, eyebrow, title, description, image_url, is_active").order("updated_at", { ascending: false }).limit(1).maybeSingle(),
       supabase.from("support_messages").select("id, first_name, last_name, email, phone, subject, message, message_type, status, created_at").order("created_at", { ascending: false }).limit(100),
@@ -175,7 +177,7 @@ export default function AdminPage() {
   useEffect(() => {
     const headingsBySection = {
       products: ["Add a product", "Bulk product import", "Products & inventory", "Category cards"],
-      orders: ["Tracking & delivery details", "Review moderation", "Recent orders"],
+      orders: ["Tracking & delivery details", "Review moderation", "Order management"],
       delivery: ["Delivery zones"],
       promotions: ["Promo banner", "About page"],
       inbox: ["Customer inbox"],
@@ -185,6 +187,8 @@ export default function AdminPage() {
     const managedSections = Object.values(headingsBySection).flat().map((heading) => [...document.querySelectorAll("h2")].find((element) => element.textContent === heading)?.closest("section")).filter(Boolean);
     document.querySelectorAll("section.border-green-200, section.border-amber-200").forEach((section) => managedSections.push(section));
     managedSections.forEach((section) => { section.hidden = activeSection === "overview" || !headingsBySection[activeSection]?.some((heading) => section.querySelector("h2")?.textContent === heading) && !((activeSection === "products") && (section.classList.contains("border-green-200") || section.classList.contains("border-amber-200"))); });
+    const retiredTrackingSection = [...document.querySelectorAll("h2")].find((heading) => heading.textContent === "Tracking & delivery details")?.closest("section");
+    if (retiredTrackingSection) retiredTrackingSection.hidden = true;
   }, [activeSection, editingProduct, editingCategory, promoBanner, aboutContent, supportMessages, clubSettings, clubTiers]);
 
   async function updateProduct(productId, updates) {
@@ -499,7 +503,7 @@ export default function AdminPage() {
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stone-200/80 bg-white/80 px-6 py-4 backdrop-blur-md dark:border-stone-800/80 dark:bg-stone-950/80 sm:px-8">
           <div>
             <h1 className="font-serif text-2xl font-bold tracking-tight text-stone-900 dark:text-white sm:text-3xl">
-              Welcome back, <span className="italic font-normal text-emerald-600 dark:text-emerald-300">{adminDisplayName}!</span>
+              Welcome back, <span className="font-normal text-emerald-600 dark:text-emerald-300">{adminDisplayName}!</span>
             </h1>
             <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">
               DorisWare Store Operations Hub
@@ -727,7 +731,7 @@ export default function AdminPage() {
 
         <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-rose-600 dark:text-rose-400">Customer feedback</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Review moderation</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Approve genuine reviews to publish them, or hide them from the storefront.</p></div><span className="rounded-full bg-stone-100 px-3 py-1.5 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">{reviews.filter((review) => !review.is_visible).length} pending</span></div>{loading ? <LoadingRows /> : reviews.length ? <div className="mt-5 grid gap-3 lg:grid-cols-2">{reviews.map((review) => <article key={review.id} className="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-stone-900 dark:text-stone-100">{products.find((product) => product.id === review.product_id)?.name ?? review.product_id}</p><p className="mt-1 text-xs text-amber-600">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</p></div><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${review.is_visible ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"}`}>{review.is_visible ? "Published" : "Pending"}</span></div>{review.title && <p className="mt-3 text-sm font-semibold text-stone-800 dark:text-stone-200">{review.title}</p>}{review.body && <p className="mt-1 text-sm leading-6 text-stone-600 dark:text-stone-300">{review.body}</p>}<div className="mt-4 flex items-center justify-between gap-3 border-t border-stone-100 pt-3 dark:border-stone-800"><p className="text-xs text-stone-400">{new Date(review.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p><button type="button" disabled={savingId === review.id} onClick={() => updateReviewVisibility(review.id, !review.is_visible)} className={`rounded-lg px-3 py-2 text-xs font-semibold disabled:opacity-60 ${review.is_visible ? "bg-stone-100 text-stone-700 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-200" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>{savingId === review.id ? "Saving…" : review.is_visible ? "Hide review" : "Approve review"}</button></div></article>)}</div> : <p className="mt-5 rounded-2xl border border-dashed border-stone-300 px-4 py-8 text-center text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400">No customer reviews have been submitted yet.</p>}</section>
 
-        <section className="mt-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900">
+        <section data-product-inventory className="mt-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 px-5 py-5 dark:border-stone-800 sm:px-6"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400"><Settings2 size={19} /></span><div><h2 className="font-semibold text-stone-900 dark:text-stone-100">Products & inventory</h2><p className="text-xs text-stone-500 dark:text-stone-400">Update stock, visibility, and featured items.</p></div></div><Link to="/shop" className="text-sm font-semibold text-green-700 hover:text-green-800 dark:text-green-400">View shop →</Link></div>
           {loading ? <LoadingRows /> : <div className="overflow-x-auto"><table className="w-full min-w-[790px] text-left text-sm"><thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500 dark:bg-stone-900/60 dark:text-stone-400"><tr><th className="px-6 py-3 font-semibold">Product</th><th className="px-4 py-3 font-semibold">Price</th><th className="px-4 py-3 font-semibold">Stock</th><th className="px-4 py-3 font-semibold">Featured</th><th className="px-4 py-3 font-semibold">Store visibility</th><th className="px-4 py-3 font-semibold">Edit</th></tr></thead><tbody className="divide-y divide-stone-100 dark:divide-stone-800">{products.map((product) => <tr key={product.id}><td className="px-6 py-4"><p className="font-semibold text-stone-900 dark:text-stone-100">{product.name}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{product.category}</p></td><td className="px-4 py-4 font-medium text-stone-700 dark:text-stone-300">{formatMoney(product.price)}</td><td className="px-4 py-4"><input aria-label={`${product.name} stock`} type="number" min="0" defaultValue={product.stock_quantity} onBlur={(event) => { const stock = Number(event.target.value); if (stock !== product.stock_quantity && stock >= 0) updateProduct(product.id, { stock_quantity: stock }); }} className="w-20 rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-sm dark:border-stone-700 dark:bg-stone-800" /></td><td className="px-4 py-4"><Toggle checked={product.featured} disabled={savingId === product.id} label={`Feature ${product.name}`} onChange={(featured) => updateProduct(product.id, { featured })} /></td><td className="px-4 py-4"><Toggle checked={product.is_active} disabled={savingId === product.id} label={`Show ${product.name} in store`} onChange={(is_active) => updateProduct(product.id, { is_active })} /></td><td className="px-4 py-4"><button type="button" onClick={() => { setEditingProduct(product); setReplacementImage(null); }} className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 font-semibold text-stone-700 hover:bg-stone-50 dark:border-stone-700 dark:text-stone-200 dark:hover:bg-stone-800"><Pencil size={14} /> Edit</button></td></tr>)}</tbody></table></div>}
         </section>
@@ -904,7 +908,9 @@ export default function AdminPage() {
 
         {promoBanner && <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900 sm:p-6"><div><p className="text-xs font-bold uppercase tracking-[.16em] text-green-700 dark:text-green-400">Homepage content</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Promo banner</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">The discount changes displayed prices only while this banner is active.</p></div><form onSubmit={savePromoBanner} className="mt-5 grid gap-4 sm:grid-cols-2"><AdminField label="Eyebrow" value={promoBanner.eyebrow} onChange={(value) => setPromoBanner({ ...promoBanner, eyebrow: value })} required /><AdminField label="CTA label" value={promoBanner.cta_label} onChange={(value) => setPromoBanner({ ...promoBanner, cta_label: value })} required /><AdminField label="Title" value={promoBanner.title} onChange={(value) => setPromoBanner({ ...promoBanner, title: value })} required /><AdminField label="Highlight" value={promoBanner.highlight ?? ""} onChange={(value) => setPromoBanner({ ...promoBanner, highlight: value })} /><AdminField label="CTA path" value={promoBanner.cta_path} onChange={(value) => setPromoBanner({ ...promoBanner, cta_path: value })} required /><AdminField label="Discount (%)" type="number" min="0" max="100" step="0.01" value={promoBanner.discount_percent ?? 0} onChange={(value) => setPromoBanner({ ...promoBanner, discount_percent: value })} /><AdminField label="Offer ends at (optional)" type="datetime-local" value={promoBanner.ends_at ?? ""} onChange={(value) => setPromoBanner({ ...promoBanner, ends_at: value })} /><label className="text-sm font-medium text-stone-700 dark:text-stone-300">Discount applies to<select value={promoBanner.discount_scope || "all"} onChange={(event) => setPromoBanner({ ...promoBanner, discount_scope: event.target.value })} className="mt-1.5 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-green-600 dark:border-stone-700 dark:bg-stone-800"><option value="all">All in-stock products</option><option value="categories">Selected categories</option></select></label><label className="flex items-center gap-2 self-end text-sm font-medium text-stone-700 dark:text-stone-300"><input type="checkbox" checked={promoBanner.is_active} onChange={(event) => setPromoBanner({ ...promoBanner, is_active: event.target.checked })} className="h-4 w-4 accent-green-600" /> Show banner</label>{promoBanner.discount_scope === "categories" && <fieldset className="sm:col-span-2"><legend className="text-sm font-medium text-stone-700 dark:text-stone-300">Discounted categories</legend><div className="mt-2 flex flex-wrap gap-3">{categories.map((category) => { const checked = promoBanner.discount_categories?.includes(category.name); return <label key={category.id} className="flex items-center gap-2 rounded-xl border border-stone-200 px-3 py-2 text-sm text-stone-700 dark:border-stone-700 dark:text-stone-300"><input type="checkbox" checked={checked} onChange={() => setPromoBanner({ ...promoBanner, discount_categories: checked ? promoBanner.discount_categories.filter((name) => name !== category.name) : [...(promoBanner.discount_categories || []), category.name] })} className="h-4 w-4 accent-green-600" /> {category.name}</label>; })}</div></fieldset>}<label className="text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2">Description<textarea required value={promoBanner.description} onChange={(event) => setPromoBanner({ ...promoBanner, description: event.target.value })} className="mt-1.5 min-h-24 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 outline-none focus:border-green-600 dark:border-stone-700 dark:bg-stone-800" /></label><label className="text-sm font-medium text-stone-700 dark:text-stone-300 sm:col-span-2">Banner image <input type="file" accept="image/*" onChange={(event) => setPromoImage(event.target.files?.[0] ?? null)} className="mt-1.5 block w-full text-sm" /></label><button type="submit" disabled={savingId === "promo-banner"} className="sm:col-span-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60">{savingId === "promo-banner" ? "Saving banner…" : "Save promo banner"}</button></form></section>}
 
-        <section className="mt-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900">
+        <AdminOrderManager orders={orders} loading={loading} savingId={savingId} onStatusChange={updateOrderStatus} onDetailsChange={updateOrderDetails} />
+
+        <section hidden aria-hidden="true" className="mt-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900">
           <div className="flex items-center gap-3 border-b border-stone-100 px-5 py-5 dark:border-stone-800 sm:px-6"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"><ClipboardList size={19} /></span><div><h2 className="font-semibold text-stone-900 dark:text-stone-100">Recent orders</h2><p className="text-xs text-stone-500 dark:text-stone-400">Update fulfilment only after payment is confirmed.</p></div></div>
           {loading ? <LoadingRows /> : <div className="overflow-x-auto"><table className="w-full min-w-[880px] text-left text-sm"><thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500 dark:bg-stone-900/60 dark:text-stone-400"><tr><th className="px-6 py-3 font-semibold">Order</th><th className="px-4 py-3 font-semibold">Customer</th><th className="px-4 py-3 font-semibold">Items</th><th className="px-4 py-3 font-semibold">Delivery</th><th className="px-4 py-3 font-semibold">Payment</th><th className="px-4 py-3 font-semibold">Fulfilment</th></tr></thead><tbody className="divide-y divide-stone-100 dark:divide-stone-800">{orders.slice(0, 12).map((order) => <tr key={order.id}><td className="px-6 py-4"><p className="font-semibold text-stone-900 dark:text-stone-100">{order.order_number}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{formatMoney(order.total)}</p></td><td className="px-4 py-4 text-stone-600 dark:text-stone-300">{order.contact_email}</td><td className="px-4 py-4 text-stone-600 dark:text-stone-300">{order.order_items?.map((item) => `${item.product_name} × ${item.quantity}`).join(", ") || "—"}</td><td className="px-4 py-4 text-stone-600 dark:text-stone-300">{order.delivery_method === "customer_arranged" ? "Customer-arranged" : "DorisWare delivery"}</td><td className="px-4 py-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass[order.payment_status] ?? "bg-stone-100 text-stone-600"}`}>{formatStatus(order.payment_status)}</span></td><td className="px-4 py-4"><select aria-label={`Fulfilment status for ${order.order_number}`} disabled={order.payment_status !== "paid" || savingId === order.id} value={order.status} onChange={(event) => updateOrderStatus(order.id, event.target.value)} className="rounded-lg border border-stone-200 bg-white px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:bg-stone-800">{orderStatuses.map((status) => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></td></tr>)}</tbody></table></div>}
         </section>
@@ -912,6 +918,141 @@ export default function AdminPage() {
       </div>
     </div>
     </ProductCategoryContext.Provider>
+  );
+}
+
+function AdminOrderManager({ orders, loading, savingId, onStatusChange, onDetailsChange }) {
+  const [expandedOrderId, setExpandedOrderId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [orderFilter, setOrderFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  const filteredOrders = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesFilter = orderFilter === "all"
+        || order.payment_status === orderFilter
+        || order.status === orderFilter;
+      const searchable = [
+        order.order_number,
+        order.contact_email,
+        order.contact_phone,
+        order.shipping_address?.recipient,
+        ...(order.order_items?.map((item) => item.product_name) ?? []),
+      ].filter(Boolean).join(" ").toLowerCase();
+      return matchesFilter && (!query || searchable.includes(query));
+    });
+  }, [orderFilter, orders, searchQuery]);
+
+  const pageCount = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const activePage = Math.min(currentPage, pageCount);
+  const visibleOrders = filteredOrders.slice((activePage - 1) * pageSize, activePage * pageSize);
+
+  const changeSearch = (value) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+    setExpandedOrderId("");
+  };
+
+  const changeFilter = (value) => {
+    setOrderFilter(value);
+    setCurrentPage(1);
+    setExpandedOrderId("");
+  };
+
+  const toggleOrder = (orderId) => setExpandedOrderId((current) => current === orderId ? "" : orderId);
+
+  const orderDetails = (order) => {
+    const address = order.shipping_address ?? {};
+    return (
+      <div className="grid gap-5 border-t border-stone-100 bg-stone-50/70 p-4 dark:border-stone-800 dark:bg-stone-950/35 sm:p-5 xl:grid-cols-[1.15fr_.85fr]">
+        <div>
+          <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Products in this order</h3>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {order.order_items?.map((item, index) => (
+              <div key={`${item.product_id ?? item.product_name}-${index}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 dark:border-stone-700 dark:bg-stone-900">
+                {item.product_image_url ? <img src={item.product_image_url} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-stone-100 text-stone-400 dark:bg-stone-800"><Box size={18} /></span>}
+                <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-stone-900 dark:text-stone-100">{item.product_name}</p><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{item.quantity} × {formatMoney(item.unit_price)}</p></div>
+                <p className="shrink-0 text-xs font-semibold text-stone-900 dark:text-stone-100">{formatMoney(Number(item.unit_price) * Number(item.quantity))}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="rounded-xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-700 dark:bg-stone-900">
+            <h3 className="font-semibold text-stone-900 dark:text-stone-100">Customer & delivery</h3>
+            <div className="mt-3 space-y-2 text-stone-600 dark:text-stone-300"><p className="flex items-start gap-2"><Mail size={15} className="mt-0.5 shrink-0 text-stone-400" /><span className="break-all">{order.contact_email}</span></p><p className="flex items-start gap-2"><Phone size={15} className="mt-0.5 shrink-0 text-stone-400" />{order.contact_phone || "No phone supplied"}</p><p className="flex items-start gap-2"><MapPin size={15} className="mt-0.5 shrink-0 text-stone-400" /><span>{order.delivery_method === "customer_arranged" ? "Customer-arranged courier or pickup" : [address.street, address.city, address.region, address.country].filter(Boolean).join(", ") || "No delivery address supplied"}</span></p></div>
+          </div>
+          <div className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-700 dark:bg-stone-900">
+            <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100">Fulfilment</h3><select aria-label={`Fulfilment status for ${order.order_number}`} disabled={order.payment_status !== "paid" || savingId === order.id} value={order.status} onChange={(event) => onStatusChange(order.id, event.target.value)} className="rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-700 dark:bg-stone-800">{orderStatuses.map((status) => <option key={status} value={status}>{formatStatus(status)}</option>)}</select></div>
+            {order.payment_status !== "paid" && <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">Fulfilment unlocks after payment is confirmed.</p>}
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1"><label className="text-xs font-medium text-stone-700 dark:text-stone-300">Tracking / rider reference<input defaultValue={order.tracking_number ?? ""} disabled={order.payment_status !== "paid"} onBlur={(event) => { if (event.target.value !== (order.tracking_number ?? "")) onDetailsChange(order.id, { tracking_number: event.target.value || null }); }} className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm disabled:opacity-50 dark:border-stone-700 dark:bg-stone-800" placeholder="Rider or courier reference" /></label><label className="text-xs font-medium text-stone-700 dark:text-stone-300">Estimated delivery<input type="date" defaultValue={order.estimated_delivery_at ?? ""} disabled={order.payment_status !== "paid"} onChange={(event) => onDetailsChange(order.id, { estimated_delivery_at: event.target.value || null })} className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm disabled:opacity-50 dark:border-stone-700 dark:bg-stone-800" /></label><label className="text-xs font-medium text-stone-700 dark:text-stone-300 sm:col-span-2 xl:col-span-1">Customer update note<textarea defaultValue={order.fulfilment_note ?? ""} disabled={order.payment_status !== "paid"} onBlur={(event) => { if (event.target.value !== (order.fulfilment_note ?? "")) onDetailsChange(order.id, { fulfilment_note: event.target.value || null }); }} className="mt-1 min-h-20 w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-sm disabled:opacity-50 dark:border-stone-700 dark:bg-stone-800" placeholder="Rider contact, pickup instruction, or delivery update" /></label></div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <section className="mt-8 overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900">
+      <div className="flex flex-col gap-4 border-b border-stone-100 p-5 dark:border-stone-800 sm:p-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"><ClipboardList size={19} /></span>
+          <div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700 dark:text-emerald-400">Store operations</p><h2 className="mt-1 text-xl font-semibold text-stone-900 dark:text-stone-100">Order management</h2><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{filteredOrders.length} order{filteredOrders.length === 1 ? "" : "s"} · Review payment and fulfilment.</p></div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-[minmax(15rem,1fr)_auto]">
+          <input type="search" value={searchQuery} onChange={(event) => changeSearch(event.target.value)} placeholder="Search order, customer, or product" className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-600 dark:border-stone-700 dark:bg-stone-800" />
+          <select value={orderFilter} onChange={(event) => changeFilter(event.target.value)} className="rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-600 dark:border-stone-700 dark:bg-stone-800">
+            <option value="all">All orders</option><option value="pending_payment">Pending payment</option><option value="paid">Paid</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? <LoadingRows /> : visibleOrders.length === 0 ? (
+        <p className="m-5 rounded-2xl border border-dashed border-stone-300 px-5 py-10 text-center text-sm text-stone-500 dark:border-stone-700 dark:text-stone-400">No orders match this search or filter.</p>
+      ) : (
+        <>
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full min-w-[980px] table-fixed text-left text-sm">
+              <thead className="border-b border-stone-200 bg-stone-50 text-[11px] font-semibold uppercase tracking-wider text-stone-500 dark:border-stone-800 dark:bg-stone-950/40 dark:text-stone-400"><tr><th className="w-[16%] px-5 py-3.5">Order</th><th className="w-[21%] px-4 py-3.5">Customer</th><th className="w-[20%] px-4 py-3.5">Products</th><th className="w-[12%] px-4 py-3.5">Total</th><th className="w-[12%] px-4 py-3.5">Payment</th><th className="w-[13%] px-4 py-3.5">Status</th><th className="w-[6%] px-4 py-3.5 text-center">Action</th></tr></thead>
+              <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
+                {visibleOrders.map((order) => {
+                  const isExpanded = expandedOrderId === order.id;
+                  const itemCount = order.order_items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0;
+                  const address = order.shipping_address ?? {};
+                  return [
+                    <tr key={order.id} className={`transition-colors hover:bg-stone-50/80 dark:hover:bg-stone-800/35 ${isExpanded ? "bg-emerald-50/40 dark:bg-emerald-950/10" : ""}`}>
+                      <td className="px-5 py-4"><p className="truncate font-semibold text-stone-900 dark:text-stone-100">{order.order_number}</p><p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{new Date(order.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p></td>
+                      <td className="px-4 py-4"><p className="truncate font-medium text-stone-800 dark:text-stone-200">{address.recipient || "Customer"}</p><p className="mt-1 truncate text-xs text-stone-500 dark:text-stone-400">{order.contact_email}</p></td>
+                      <td className="px-4 py-4"><div className="flex items-center gap-2.5">{order.order_items?.[0]?.product_image_url ? <img src={order.order_items[0].product_image_url} alt="" className="h-9 w-9 shrink-0 rounded-full border-2 border-white object-cover shadow-sm dark:border-stone-800" /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-100 text-stone-400 dark:bg-stone-800"><Box size={15} /></span>}<div className="min-w-0"><p className="truncate text-sm font-medium text-stone-800 dark:text-stone-200">{order.order_items?.[0]?.product_name || "No product"}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{itemCount} item{itemCount === 1 ? "" : "s"}{(order.order_items?.length ?? 0) > 1 ? ` · ${order.order_items.length - 1} more` : ""}</p></div></div></td>
+                      <td className="px-4 py-4 font-semibold text-stone-900 dark:text-stone-100">{formatMoney(order.total)}</td>
+                      <td className="px-4 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass[order.payment_status] ?? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"}`}>{formatStatus(order.payment_status)}</span></td>
+                      <td className="px-4 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusClass[order.status] ?? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"}`}>{formatStatus(order.status)}</span></td>
+                      <td className="px-4 py-4 text-center"><button type="button" onClick={() => toggleOrder(order.id)} aria-label={`${isExpanded ? "Close" : "View"} ${order.order_number}`} aria-expanded={isExpanded} className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition ${isExpanded ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" : "text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-white"}`}><MoreHorizontal size={19} /></button></td>
+                    </tr>,
+                    isExpanded && <tr key={`${order.id}-details`}><td colSpan="7" className="p-0">{orderDetails(order)}</td></tr>,
+                  ];
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="divide-y divide-stone-100 dark:divide-stone-800 md:hidden">
+            {visibleOrders.map((order) => {
+              const isExpanded = expandedOrderId === order.id;
+              const itemCount = order.order_items?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0;
+              return <article key={order.id}><button type="button" onClick={() => toggleOrder(order.id)} aria-expanded={isExpanded} className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4 text-left"><span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-stone-100 text-stone-400 dark:bg-stone-800">{order.order_items?.[0]?.product_image_url ? <img src={order.order_items[0].product_image_url} alt="" className="h-full w-full object-cover" /> : <Box size={17} />}</span><span className="min-w-0"><span className="flex items-center gap-2"><strong className="truncate text-sm text-stone-900 dark:text-stone-100">{order.order_number}</strong><span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClass[order.status] ?? "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-300"}`}>{formatStatus(order.status)}</span></span><span className="mt-1 block truncate text-xs text-stone-500 dark:text-stone-400">{order.order_items?.[0]?.product_name || "No product"} · {itemCount} item{itemCount === 1 ? "" : "s"}</span></span><span className="text-right"><strong className="block text-sm text-stone-900 dark:text-stone-100">{formatMoney(order.total)}</strong><MoreHorizontal size={18} className="ml-auto mt-1 text-stone-400" /></span></button>{isExpanded && orderDetails(order)}</article>;
+            })}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-stone-100 px-5 py-4 text-sm dark:border-stone-800 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-stone-500 dark:text-stone-400">Showing {filteredOrders.length ? (activePage - 1) * pageSize + 1 : 0}–{Math.min(activePage * pageSize, filteredOrders.length)} of {filteredOrders.length}</p>
+            <div className="flex items-center justify-between gap-2 sm:justify-end"><button type="button" disabled={activePage === 1} onClick={() => { setCurrentPage((page) => Math.max(1, page - 1)); setExpandedOrderId(""); }} className="rounded-lg px-3 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-300 dark:hover:bg-stone-800">Previous</button><div className="flex items-center gap-1">{Array.from({ length: pageCount }, (_, index) => index + 1).filter((page) => page === 1 || page === pageCount || Math.abs(page - activePage) <= 1).map((page, index, pages) => <span key={page} className="flex items-center gap-1">{index > 0 && page - pages[index - 1] > 1 && <span className="px-1 text-stone-400">…</span>}<button type="button" onClick={() => { setCurrentPage(page); setExpandedOrderId(""); }} aria-current={page === activePage ? "page" : undefined} className={`h-8 min-w-8 rounded-lg px-2 text-xs font-semibold ${page === activePage ? "bg-emerald-600 text-white" : "text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"}`}>{String(page).padStart(2, "0")}</button></span>)}</div><button type="button" disabled={activePage === pageCount} onClick={() => { setCurrentPage((page) => Math.min(pageCount, page + 1)); setExpandedOrderId(""); }} className="rounded-lg px-3 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-300 dark:hover:bg-stone-800">Next</button></div>
+          </div>
+        </>
+      )}
+    </section>
   );
 }
 

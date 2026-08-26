@@ -591,8 +591,8 @@ export default function ProfilePage() {
                     <span className="text-rose-500 font-medium">{favorites.length} Items</span>
                   </div>
                   <div className="flex items-center justify-between gap-4 py-2">
-                    <span>Latest order</span>
-                    <span className="max-w-[11rem] truncate text-right font-medium text-stone-500 dark:text-stone-400">{latestOrder ? `${latestOrder.id} · ${latestOrder.status}` : "No orders yet"}</span>
+                    <span className="shrink-0">Latest order</span>
+                    {latestOrder ? <span className="min-w-0 max-w-[12rem] text-right font-medium leading-relaxed text-stone-500 dark:text-stone-400"><span className="block break-words">{latestOrder.id}</span><span className="block text-[11px] text-emerald-600 dark:text-emerald-400">{latestOrder.status}</span></span> : <span className="text-right font-medium text-stone-500 dark:text-stone-400">No orders yet</span>}
                   </div>
                 </div>
               </div>

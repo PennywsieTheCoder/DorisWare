@@ -45,7 +45,7 @@ export default function ProductPage() {
   const navigate = useNavigate();
   const { products, loading } = useProducts();
   const product = products.find((item) => item.id === id);
-  const { addToCart, openCart } = useCart();
+  const { addToCart } = useCart();
   const { user, isFavorite, toggleFavorite } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [imageIndex, setImageIndex] = useState(0);
@@ -102,8 +102,8 @@ export default function ProductPage() {
     toggleFavorite(product);
   }
   function add() {
-    for (let index = 0; index < quantity; index += 1) addToCart(product);
-    setQuantity(1); openCart();
+    addToCart(product, quantity);
+    setQuantity(1);
   }
   const canReview = user?.orders?.some((order) => order.status === "Delivered" && order.items?.some((item) => item.id === product?.id));
   const ownReview = reviews.find((review) => review.user_id === user?.id);

@@ -75,15 +75,18 @@ export default function ShopPage() {
           <h2 className="font-serif text-2xl font-semibold text-stone-800 dark:text-stone-100 sm:text-3xl">
             Shop All Products
           </h2>
-          <Filters
-            category={category}
-            categories={categories}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            onCategoryChange={(value) => updateFilterParam("category", value)}
-            onMinPriceChange={(value) => { setVisibleCount(12); setMinPrice(value); }}
-            onMaxPriceChange={(value) => { setVisibleCount(12); setMaxPrice(value); }}
-          />
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => updateFilterParam("category", "All")} aria-pressed={category === "All"} className={`h-11 rounded-full border px-4 text-sm font-semibold transition ${category === "All" ? "border-amber-500 bg-amber-500 text-stone-950" : "border-stone-200 bg-white text-stone-700 hover:border-amber-400 hover:text-amber-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200"}`}>All products</button>
+            <Filters
+              category={category}
+              categories={categories}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              onCategoryChange={(value) => updateFilterParam("category", value)}
+              onMinPriceChange={(value) => { setVisibleCount(12); setMinPrice(value); }}
+              onMaxPriceChange={(value) => { setVisibleCount(12); setMaxPrice(value); }}
+            />
+          </div>
         </div>
 
         {loading ? (
