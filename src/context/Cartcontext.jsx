@@ -18,7 +18,7 @@
 //    value. Called inside any component, no matter how deeply
 //    nested inside the Provider.
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 // Step 1: create the context "channel"
 const CartContext = createContext(null);
@@ -30,7 +30,14 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [cartAlert, setCartAlert] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartNotice, setCartNotice] = useState(null);
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    if (!cartNotice) return undefined;
+    const timeout = window.setTimeout(() => setCartNotice(null), 3500);
+    return () => window.clearTimeout(timeout);
+  }, [cartNotice]);
 
   function parsePrice(price) {
     if (!price && price !== 0) return 0;
@@ -38,36 +45,42 @@ export function CartProvider({ children }) {
     return Number.isNaN(n) ? 0 : n;
   }
 
-  function addToCart(item) {
+  function addToCart(item, amount = 1) {
     const availableStock = Number(item.quantity ?? 0);
+    const quantityToAdd = Math.max(1, Math.floor(Number(amount) || 1));
 
     if (availableStock <= 0) {
       setCartAlert(`${item.name} is out of stock.`);
       return;
     }
 
+    setCartNotice({ id: Date.now(), productName: item.name });
+
     setItems((current) => {
       const existing = current.find((entry) => entry.id === item.id);
 
       if (existing) {
-        const nextQuantity = existing.quantity + 1;
+        const nextQuantity = existing.quantity + quantityToAdd;
         if (nextQuantity > availableStock) {
           setCartAlert(`Only ${availableStock} unit${availableStock === 1 ? "" : "s"} available for ${item.name}.`);
-          return current;
         }
 
-        setCartAlert("");
+        if (nextQuantity <= availableStock) setCartAlert("");
         return current.map((entry) =>
-          entry.id === item.id ? { ...entry, quantity: nextQuantity } : entry
+          entry.id === item.id ? { ...entry, quantity: Math.min(nextQuantity, availableStock) } : entry
         );
       }
 
-      setCartAlert("");
+      if (quantityToAdd > availableStock) {
+        setCartAlert(`Only ${availableStock} unit${availableStock === 1 ? "" : "s"} available for ${item.name}.`);
+      } else {
+        setCartAlert("");
+      }
       return [
         ...current,
         {
           ...item,
-          quantity: 1,
+          quantity: Math.min(quantityToAdd, availableStock),
           unitPrice: parsePrice(item.price),
           stockQuantity: availableStock,
         },
@@ -116,6 +129,7 @@ export function CartProvider({ children }) {
   }
 
   function openCart() {
+    setCartNotice(null);
     setIsCartOpen(true);
   }
 
@@ -127,7 +141,7 @@ export function CartProvider({ children }) {
   const formattedTotal = `₵${total.toFixed(2)}`;
 
   return (
-    <CartContext.Provider value={{ items, count, addToCart, updateQuantity, removeFromCart, clearCart, clearCartAlert, cartAlert, total: formattedTotal, isCartOpen, openCart, closeCart }}>
+    <CartContext.Provider value={{ items, count, addToCart, updateQuantity, removeFromCart, clearCart, clearCartAlert, cartAlert, total: formattedTotal, isCartOpen, openCart, closeCart, cartNotice, dismissCartNotice: () => setCartNotice(null) }}>
       {children}
     </CartContext.Provider>
   );

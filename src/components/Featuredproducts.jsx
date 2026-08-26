@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import ProductCard from "./Productcard";
 import { useProducts } from "../hooks/useProducts";
@@ -20,15 +20,11 @@ export default function FeaturedProducts({ limit = 6 }) {
   const featured = filteredProducts.slice(0, limit);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+    <section className="mx-auto max-w-7xl px-4 pb-16 pt-6 sm:px-6 sm:py-16">
       {/* Header row */}
       <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-10">
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-            <Sparkles size={13} />
-            <span>Handpicked for you</span>
-          </div>
-          <h2 className="mt-2 font-serif text-3xl font-semibold text-stone-850 dark:text-stone-100 md:text-4xl">
+          <h2 className="font-serif text-3xl font-semibold text-stone-850 dark:text-stone-100 md:text-4xl">
             Featured Products
           </h2>
         </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ChevronRight, ShieldCheck, Truck } from "lucide-react";
 import { useHeroImages } from "../hooks/useHeroImages";
 
 export default function Hero() {
@@ -19,7 +19,7 @@ export default function Hero() {
   const displayedImage = Math.min(activeImage, Math.max(imageUrls.length - 1, 0));
 
   return (
-    <section className="relative h-[400px] w-full overflow-hidden sm:h-[440px] lg:h-[470px]">
+    <section className="relative h-[330px] w-full overflow-hidden sm:h-[350px] lg:h-[380px]">
       {/* Background Image with Ambient Pan-Zoom Animation */}
       <div className="absolute inset-0 select-none overflow-hidden">
         {imageUrls.map((url, index) => <img key={url} src={url} alt={index === displayedImage ? "DorisWare premium kitchenware" : ""} className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 scale-105 animate-[zoomPan_20s_infinite_alternate] ${index === displayedImage ? "opacity-100" : "opacity-0"}`} />)}
@@ -38,15 +38,9 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0)_0%,rgba(0,0,0,0.5)_100%)]" />
 
       {/* Hero Content Wrapper */}
-      <div className="relative z-10 mx-auto flex h-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto flex h-full max-w-7xl items-center px-4 pb-8 sm:px-6 sm:pb-0 lg:px-8">
         <div className="max-w-2xl text-left">
-          {/* Tag badge */}
-          <div className="inline-flex items-center gap-2 rounded-full bg-amber-400/20 border border-amber-400/30 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-300 backdrop-blur-md">
-            <Sparkles size={13} className="text-amber-400" />
-            <span>Premium 2026 Collection</span>
-          </div>
-
-          <h1 className="mt-4 font-serif text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl">
+          <h1 className="font-serif text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl md:text-6xl">
             Crafted for
             <br />
             <span className="bg-gradient-to-r from-amber-300 via-amber-400 to-emerald-300 bg-clip-text text-transparent">
@@ -54,22 +48,22 @@ export default function Hero() {
             </span>
           </h1>
 
-          <p className="mt-4 max-w-lg text-sm leading-relaxed text-stone-200 sm:text-base md:text-lg">
+          <p className="mt-3 max-w-lg text-sm leading-relaxed text-stone-200 sm:text-base md:text-lg">
             Elevate your culinary craft with premium pre-seasoned cast iron, 
             hand-carved olive utensils, and state-of-the-art kitchenware designed for generations.
           </p>
 
           {/* Action buttons */}
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-4 flex items-center gap-3">
             <Link
               to="/shop"
-              className="flex-1 whitespace-nowrap rounded-xl bg-amber-500 px-4 py-3 text-center text-sm font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400 hover:shadow-amber-500/30 active:scale-98 sm:flex-none sm:px-6"
+              className="flex-1 whitespace-nowrap rounded-xl bg-amber-500 px-4 py-2.5 text-center text-sm font-bold text-stone-950 shadow-lg shadow-amber-500/20 transition-all hover:bg-amber-400 hover:shadow-amber-500/30 active:scale-98 sm:flex-none sm:px-6"
             >
               Shop Collection
             </Link>
             <Link
               to="/about"
-              className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-98 sm:flex-none sm:px-6"
+              className="flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-98 sm:flex-none sm:px-6"
             >
               Our Story
               <ChevronRight size={16} />
@@ -77,7 +71,7 @@ export default function Hero() {
           </div>
 
           {/* Trust points */}
-          <div className="mt-7 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-4 text-xs text-stone-300">
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 border-t border-white/10 pt-3 text-xs text-stone-300">
             <div className="flex items-center gap-2">
               <Truck size={15} className="text-amber-400" />
               <span>Delivery across Ghana · options shown at checkout</span>
@@ -90,22 +84,13 @@ export default function Hero() {
         </div>
       </div>
 
-      {images.length > 1 && <div className="absolute bottom-11 left-1/2 z-20 flex -translate-x-1/2 gap-2">{images.map((url, index) => <button key={url} type="button" onClick={() => setActiveImage(index)} aria-label={`Show hero image ${index + 1}`} className={`h-2 w-2 rounded-full transition ${index === displayedImage ? "bg-white scale-125" : "bg-white/50 hover:bg-white/80"}`} />)}</div>}
-
-      {/* Curved Wave Bottom Divider */}
-      <div className="absolute -bottom-1 left-0 w-full overflow-hidden leading-none z-10">
-        <svg
-          viewBox="0 0 1440 120"
-          preserveAspectRatio="none"
-          className="block h-16 w-full"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            className="fill-stone-50 dark:fill-stone-950 transition-colors duration-200"
-            d="M0,64L80,69.3C160,75,320,85,480,85.3C640,85,800,75,960,69.3C1120,64,1280,64,1360,64L1440,64L1440,130L1360,130C1280,130,1120,130,960,130C800,130,640,130,480,130C320,130,160,130,80,130L0,130Z"
-          />
+      {/* Shallow curved transition into the page content */}
+      <div className="pointer-events-none absolute -bottom-px left-0 z-10 w-full overflow-hidden leading-none" aria-hidden="true">
+        <svg viewBox="0 0 1440 48" preserveAspectRatio="none" className="block h-6 w-full" xmlns="http://www.w3.org/2000/svg">
+          <path className="fill-stone-50 transition-colors duration-200 dark:fill-stone-950" d="M0,31 C320,44 650,42 900,25 C1110,11 1285,16 1440,27 L1440,48 L0,48 Z" />
         </svg>
       </div>
+
     </section>
   );
 }
